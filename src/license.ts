@@ -1,7 +1,9 @@
 const SLUG = 'ear-in-context';
 const TOKEN_KEY = `sb_license:${SLUG}`;
 const VERDICT_KEY = `sb_license_verdict:${SLUG}`;
-const API_BASE = (import.meta.env.VITE_BILLING_BASE as string | undefined) ?? 'https://pilot-api.sociobot.in';
+// Production builds must always use the live Sociobot billing service. Local
+// staging can opt into its test endpoint explicitly with VITE_BILLING_BASE.
+const API_BASE = (import.meta.env.VITE_BILLING_BASE as string | undefined) ?? 'https://api.sociobot.in';
 
 interface Verdict { valid: boolean; checkedAt: number; reason?: string }
 

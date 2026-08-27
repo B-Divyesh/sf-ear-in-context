@@ -34,11 +34,11 @@ The reproducible production command is `npm run build`. It emits the static site
 
 Progress and settings use `localStorage`; audio is analysed in memory and is neither recorded nor uploaded. `/privacy` and `/terms` contain the user-facing policies.
 
-Studio uses only the Sociobot hosted checkout and license API. The default development base is `https://pilot-api.sociobot.in`; release deployment should set `VITE_BILLING_BASE=https://api.sociobot.in`. The product slug is the public route slug, not an embedded provider product ID.
+Studio uses only the Sociobot hosted checkout and license API. Production defaults to `https://api.sociobot.in`; a staging build may explicitly set `VITE_BILLING_BASE=https://pilot-api.sociobot.in`. The product slug is the public route slug, not an embedded provider product ID.
 
 ## Deployment
 
-Deploy `dist/` as an Azure Static Web App. `public/swa-cli.config.json` supplies SPA fallback, security headers, and asset caching policy. DNS and billing registration are intentionally outside this repository.
+Deploy `dist/` as an Azure Static Web App. The Vite public copy emits `staticwebapp.config.json` at the `dist/` root, where Azure applies the SPA fallback, security headers, cache policy, and manifest MIME type. DNS and billing registration are intentionally outside this repository.
 
 ## License
 
