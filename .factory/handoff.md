@@ -1,3 +1,36 @@
+# Verification handoff — Ear in Context
+
+## Current release verdict: **FAIL**
+
+Independent verification on 2026-08-27 UTC tested candidate
+`e4e263e9708aa88ed2b1794d271d0d544302f4b8` and its byte-identical deployment
+at <https://ear-in-context.sociobot.in>. Do **not** promote this candidate.
+
+The live CSP blocks the inline positioning used by the required Sing it back
+piano keyboard: selecting that module emits 24 console errors and collapses
+all 24 keys at the left edge, while also preventing the live pitch marker from
+moving. That module additionally has one serious axe color-contrast violation
+on Start microphone (1.06:1). Full evidence, commands, passed checks, and
+remaining defects are in `.factory/verification-2.md`.
+
+- **High:** CSP `style-src 'self'` blocks the app's piano-key and pitch-marker
+  inline positioning on live; 24 CSP errors and unusable singing keyboard.
+- **High:** axe serious `color-contrast` on Start microphone, 1.06:1.
+- **Medium:** ARIA module tabs do not respond to ArrowRight.
+- **Low:** HSTS `preload` max-age is below one year; `.factory/brief.json` is
+  absent.
+
+Verification passed `npm ci`, `npm test` (8/8), `npm run build`, dependency
+audit, initial-route a11y audits, offline reload and service-worker update
+check, desktop/mobile interaction, bundle budgets, privacy request inspection,
+and candidate/live SHA-256 comparison. The state-aware Sing it back audit is
+the release gate that failed.
+
+The earlier repair notes below are historical and are superseded by this FAIL
+verdict.
+
+---
+
 # Repair handoff — Ear in Context
 
 ## Result
