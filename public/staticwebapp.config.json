@@ -7,6 +7,7 @@
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
     "Permissions-Policy": "microphone=(self)",
     "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://api.sociobot.in; img-src 'self'; media-src 'self' blob:; style-src 'self'; script-src 'self'; worker-src 'self';"
   },

@@ -130,16 +130,52 @@ kbd { display: inline-block; min-width: 23px; padding: 2px 5px; border: 1px soli
 .feedback .primary { min-height: 44px; padding: 8px 13px; }
 
 .keyboard-scroll { width: 100%; overflow-x: auto; margin: 18px 0 10px; padding: 10px 2px 12px; }
-.keyboard { width: 616px; height: 180px; position: relative; border: 2px solid var(--ink); background: #fdfbf5; }
-.piano-key { position: absolute; top: 0; display: block; border-right: 1px solid #5b625e; }
-.piano-key.white { left: calc(var(--key) * 7.142857%); width: 7.142857%; height: 100%; background: #fdfbf5; }
+.keyboard { width: 616px; height: 180px; display: flex; position: relative; overflow: hidden; border: 2px solid var(--ink); background: #fdfbf5; }
+.piano-key { top: 0; display: block; border-right: 1px solid #5b625e; }
+.piano-key.white { position: relative; flex: 0 0 7.142857%; height: 100%; background: #fdfbf5; }
 .piano-key.white small { position: absolute; bottom: 5px; left: 5px; color: #303834; font-size: 10px; }
-.piano-key.black { width: 22px; height: 61%; background: #17211d; border: 1px solid #070a09; z-index: 2; }
+.piano-key.black { position: absolute; width: 22px; height: 61%; background: #17211d; border: 1px solid #070a09; z-index: 2; }
+.piano-key.black-after-white-1 { left: calc(7.142857% - 11px); }
+.piano-key.black-after-white-2 { left: calc(14.285714% - 11px); }
+.piano-key.black-after-white-4 { left: calc(28.571428% - 11px); }
+.piano-key.black-after-white-5 { left: calc(35.714285% - 11px); }
+.piano-key.black-after-white-6 { left: calc(42.857142% - 11px); }
+.piano-key.black-after-white-8 { left: calc(57.142856% - 11px); }
+.piano-key.black-after-white-9 { left: calc(64.285713% - 11px); }
+.piano-key.black-after-white-11 { left: calc(78.571427% - 11px); }
+.piano-key.black-after-white-12 { left: calc(85.714284% - 11px); }
+.piano-key.black-after-white-13 { left: calc(92.857141% - 11px); }
 .pitch-marker { position: absolute; top: 104px; width: 26px; height: 26px; margin-left: -13px; z-index: 4; border-radius: 50%; border: 3px solid #fff; background: #c53f32; box-shadow: 0 2px 0 #17211d; transition: left 120ms linear; }
+.pitch-marker[data-position='0'] { left: 0%; }
+.pitch-marker[data-position='1'] { left: 4.166667%; }
+.pitch-marker[data-position='2'] { left: 8.333333%; }
+.pitch-marker[data-position='3'] { left: 12.5%; }
+.pitch-marker[data-position='4'] { left: 16.666667%; }
+.pitch-marker[data-position='5'] { left: 20.833333%; }
+.pitch-marker[data-position='6'] { left: 25%; }
+.pitch-marker[data-position='7'] { left: 29.166667%; }
+.pitch-marker[data-position='8'] { left: 33.333333%; }
+.pitch-marker[data-position='9'] { left: 37.5%; }
+.pitch-marker[data-position='10'] { left: 41.666667%; }
+.pitch-marker[data-position='11'] { left: 45.833333%; }
+.pitch-marker[data-position='12'] { left: 50%; }
+.pitch-marker[data-position='13'] { left: 54.166667%; }
+.pitch-marker[data-position='14'] { left: 58.333333%; }
+.pitch-marker[data-position='15'] { left: 62.5%; }
+.pitch-marker[data-position='16'] { left: 66.666667%; }
+.pitch-marker[data-position='17'] { left: 70.833333%; }
+.pitch-marker[data-position='18'] { left: 75%; }
+.pitch-marker[data-position='19'] { left: 79.166667%; }
+.pitch-marker[data-position='20'] { left: 83.333333%; }
+.pitch-marker[data-position='21'] { left: 87.5%; }
+.pitch-marker[data-position='22'] { left: 91.666667%; }
+.pitch-marker[data-position='23'] { left: 95.833333%; }
+.pitch-marker[data-position='24'] { left: 100%; }
 .pitch-readout { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; font-variant-numeric: tabular-nums; }
 .pitch-readout span { color: var(--ink-soft); }
 .mic-button { width: 100%; border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); font-weight: 800; }
 .answer-panel .button-row { display: grid; grid-template-columns: 1fr auto; }
+.answer-panel .button-row .mic-button { background: var(--ink); color: var(--paper); }
 .answer-panel .target-button { border: 1.5px solid var(--ink); background: transparent; padding: 8px 12px; }
 .inline-error { padding: 10px 12px; background: var(--danger-bg); color: var(--ink); }
 

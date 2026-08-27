@@ -171,9 +171,11 @@ function updatePitchUi(midi: number | null): void {
     return;
   }
   marker.hidden = false;
-  marker.style.left = `${((midi - 48) / 24) * 100}%`;
+  // Positioning is deliberately represented as a data state rather than an
+  // inline style. The production CSP prohibits inline styles, and the CSS
+  // maps each displayed semitone to its keyboard position.
+  marker.dataset.position = String(Math.round(midi) - 48);
   label.textContent = `${midiName(midi)} · ${Math.abs((midi - Math.round(midi)) * 100).toFixed(0)} cents ${midi >= Math.round(midi) ? 'sharp' : 'flat'}`;
-  marker.setAttribute('aria-label', `Detected ${midiName(midi)}`);
 }
 
 function voiceDiagram(item: Exercise): string {
@@ -201,14 +203,13 @@ function pianoKeyboard(): string {
   for (let midi = 48; midi < 72; midi += 1) {
     const pitchClass = midi % 12;
     if (whitePitchClasses.has(pitchClass)) {
-      whites.push(`<span class="piano-key white" style="--key:${whiteIndex}" aria-hidden="true"><small>${pitchClass === 0 ? midiName(midi) : ''}</small></span>`);
+      whites.push(`<span class="piano-key white" aria-hidden="true"><small>${pitchClass === 0 ? midiName(midi) : ''}</small></span>`);
       whiteIndex += 1;
     } else {
-      const left = (whiteIndex / 14) * 100;
-      blacks.push(`<span class="piano-key black" style="left:calc(${left}% - 11px)" aria-hidden="true"></span>`);
+      blacks.push(`<span class="piano-key black black-after-white-${whiteIndex}" aria-hidden="true"></span>`);
     }
   }
-  return `<div class="keyboard-scroll"><div class="keyboard" role="img" aria-label="Two-octave piano keyboard from C3 to B4. The red marker follows your sung pitch.">${whites.join('')}${blacks.join('')}<span id="pitch-marker" class="pitch-marker" hidden aria-label="Detected pitch"></span></div></div>`;
+  return `<div class="keyboard-scroll"><div class="keyboard" role="img" aria-label="Two-octave piano keyboard from C3 to B4. The red marker follows your sung pitch.">${whites.join('')}${blacks.join('')}<span id="pitch-marker" class="pitch-marker" hidden></span></div></div>`;
 }
 
 function accuracy(): number {
@@ -255,11 +256,11 @@ function render(): void {
         <label class="level-control"><span>Level</span><select data-control="level" aria-label="Difficulty level"><option value="1" ${progress.level[moduleId] === 1 ? 'selected' : ''}>1 · Ground</option><option value="2" ${progress.level[moduleId] === 2 ? 'selected' : ''}>2 · Colour</option><option value="3" ${progress.level[moduleId] === 3 ? 'selected' : ''}>3 · Tension</option></select></label>
       </div>
       <div class="module-tabs" role="tablist" aria-label="Training module">
-        <button role="tab" aria-selected="${moduleId === 'intervals'}" data-module="intervals"><span>01</span> Scale degrees</button>
-        <button role="tab" aria-selected="${moduleId === 'progressions'}" data-module="progressions"><span>02</span> Progressions</button>
-        <button role="tab" aria-selected="${moduleId === 'sing'}" data-module="sing"><span>03</span> Sing it back</button>
+        <button id="module-tab-intervals" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'intervals'}" tabindex="${moduleId === 'intervals' ? '0' : '-1'}" data-module="intervals"><span>01</span> Scale degrees</button>
+        <button id="module-tab-progressions" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'progressions'}" tabindex="${moduleId === 'progressions' ? '0' : '-1'}" data-module="progressions"><span>02</span> Progressions</button>
+        <button id="module-tab-sing" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'sing'}" tabindex="${moduleId === 'sing' ? '0' : '-1'}" data-module="sing"><span>03</span> Sing it back</button>
       </div>
-      <div id="practice-panel"></div>
+      <div id="practice-panel" role="tabpanel" tabindex="0" aria-labelledby="module-tab-${moduleId}"></div>
     </section>
     <section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">More colours, same honest core.</h2><p>Unlock Clarity and Reed synthesis textures plus a full JSON backup. Core exercises and CSV export stay free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Unlock Studio</a>`}</div></section>
     <section class="settings" aria-labelledby="settings-title"><details><summary id="settings-title">Progress, sound & license</summary><div class="settings-grid">
@@ -296,14 +297,29 @@ function renderPractice(): void {
 }
 
 function bindPracticeShell(): void {
-  document.querySelectorAll<HTMLButtonElement>('[data-module]').forEach(button => button.addEventListener('click', () => {
+  const moduleButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-module]'));
+  const selectModule = (button: HTMLButtonElement): void => {
     stopMic();
     moduleId = button.dataset.module as ModuleId;
     exercise = chooseExercise(exercisesByModule[moduleId], progress, moduleId);
     answer = null;
     render();
     document.querySelector<HTMLButtonElement>(`[data-module="${moduleId}"]`)?.focus();
-  }));
+  };
+  moduleButtons.forEach(button => {
+    button.addEventListener('click', () => selectModule(button));
+    button.addEventListener('keydown', event => {
+      let nextIndex: number | null = null;
+      const currentIndex = moduleButtons.indexOf(button);
+      if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % moduleButtons.length;
+      if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + moduleButtons.length) % moduleButtons.length;
+      if (event.key === 'Home') nextIndex = 0;
+      if (event.key === 'End') nextIndex = moduleButtons.length - 1;
+      if (nextIndex === null) return;
+      event.preventDefault();
+      selectModule(moduleButtons[nextIndex]);
+    });
+  });
   document.querySelector<HTMLInputElement>('[data-control="sandbox"]')?.addEventListener('change', event => {
     progress.sandbox = (event.currentTarget as HTMLInputElement).checked;
     answer = null;

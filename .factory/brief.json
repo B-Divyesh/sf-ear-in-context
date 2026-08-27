@@ -1,0 +1,21 @@
+{
+  "product": "Ear in Context",
+  "slug": "ear-in-context",
+  "artifact_class": "static-web",
+  "audience": "Self-taught musicians who want ear training in musical context rather than isolated interval drills.",
+  "job_to_be_done": "Practice hearing scale degrees, voice-led progressions, and sung pitches at a self-directed pace, without creating an account or uploading audio.",
+  "core_experience": [
+    "Cadence-anchored scale-degree listening",
+    "Compact, voice-led progression recognition",
+    "Live monophonic sung-pitch feedback on a two-octave keyboard",
+    "Sandbox exploration, test-mode scheduling, and a hold-level control"
+  ],
+  "constraints": [
+    "Local-first progress and settings",
+    "Microphone audio is analysed in the browser and never recorded or uploaded",
+    "No analytics, third-party fonts, or remote application scripts",
+    "Core practice and CSV export remain free and accessible",
+    "Optional Studio is a $24 one-time Sociobot/Dodo license unlock"
+  ],
+  "source_note": "Restored as repository metadata on 2026-08-27 from the supplied factory work order and the implemented product contract; the original research artifact was not present in the checkout."
+}
