@@ -1,0 +1,10 @@
+{
+  "name": "Ear in Context",
+  "short_name": "Ear in Context",
+  "description": "Context-first ear training that waits for you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e7",
+  "theme_color": "#17211d",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
