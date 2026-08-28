@@ -1,55 +1,58 @@
-# Ear in Context — adversarial review round 5 handoff
+# Ear in Context — polish round 5 handoff
 
 ## Outcome
 
-Reviewed candidate `4a2010573bbb597692ced7c0b432d890fba7c5c7` against the live
-deployment at <https://ear-in-context.sociobot.in> in fresh 390 × 844 and
-1440 × 900 Chromium contexts.
+Released `616d186b0401b612f05ee18afce38bb21c239fd3` to
+<https://ear-in-context.sociobot.in> through Azure Static Web Apps deployment
+`50fa8055-2d36-40af-864a-0ca76f7c9849`.
 
-Verdict: **FAIL** with one major and two minor findings. There are no blocking
-findings. The first read, one-click isolated demo, registered claims, routing,
-offline behavior, accessibility baseline, and distinct visual identity pass.
-The remaining work is documented in `.factory/review-5.md`:
+The major backup gap is closed: Studio now downloads a versioned progress
+backup and restores it through validated file selection, a settings preview,
+explicit replacement confirmation, and a safe malformed-file path. The phone
+header keeps Privacy visible, and every off-origin link says **(external)**.
+The existing warm-paper, coral, and teal voice-path identity remains intact.
 
-- `F-5-1`: the paid downloadable progress backup has no restore path.
-- `F-5-2`: the 390 px header hides Privacy.
-- `F-5-3`: off-origin links do not identify themselves as external.
+`/demo` and `?demo=1` remain one-click isolated sample paths. They keep normal
+progress untouched, show the persistent demo banner, reset sample state, and
+discard it on exit.
 
-No product code was modified.
-
-## How verification was run
+## Run and verify
 
 ```bash
 npm ci
 npm test
 npm run build
+npm run test:browser
+npm run preview -- --host 127.0.0.1
+AUDIT_URL=http://127.0.0.1:4173 npm run audit:a11y
 LIVE_URL=https://ear-in-context.sociobot.in npm run test:live
-AUDIT_URL=https://ear-in-context.sociobot.in npm run audit:a11y
-VERIFY_NODE_MODULES=/work/repo/node_modules \
-  bash /opt/fleet/lib/verify-url.sh https://ear-in-context.sociobot.in <evidence-dir>
 ```
 
-Every exact command in `.factory/claims.json` was also run independently from
-clean clone `/tmp/ear-in-context-review5.YGUQmh`, with a separate fresh browser
-context per command.
+Run every exact `test` value in `.factory/claims.json` separately for the
+claim-level suite. The production artifact is `dist/`, with `index.html` at
+its root; deploy it using the checked-in `staticwebapp.config.json`.
 
-## Verification results
+## Exact evidence
 
-- `npm test`: 3 files and 8 tests passed.
-- `npm run build`: passed; emitted `dist/index.html`, 34.43 kB JS and 21.61 kB
-  CSS before gzip.
-- Registered claims: 21/21 passed independently from the clean clone.
-- Live aggregate: 21/21 claims plus HTTP routing, metadata, focus/Back, phone
-  layout, crawl, and console checks passed.
-- Live accessibility audit: zero serious/critical Axe violations and zero
-  console errors across light/dark, demo, legal, singing, and 404 states.
-- URL verifier: title, `lang`, one h1, main, image alt text, labeled buttons,
-  and console checks passed.
-- Live and local JS/CSS SHA-256 hashes match.
+- Fresh clone `/tmp/ear-in-context-polish-5.RVk5mH` at `616d186`: `npm ci`,
+  `npm test` (4 files, 10 tests), `npm run build`, all 22 registry commands
+  separately, aggregate browser tests, Axe audit, URL verifier, and production
+  dependency audit passed.
+- Live aggregate: 22/22 claims passed, including the new
+  `@claim:progress-backup-restore`; routing, 404 status, metadata, focus,
+  390 px Privacy target, external-link labels, offline reload, and console
+  checks also passed.
+- Live Axe: zero serious/critical violations and zero console errors across
+  light/dark, home, demo, legal, singing, and not-found routes.
+- Live URL verifier: HTTP 200, title, `lang`, one h1, main landmark, alt text,
+  labelled controls, and zero console errors. `GET /not-a-real-page` returned
+  404; `/sitemap.xml` returned `text/xml`.
+- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; FCP 965 ms, LCP 1018 ms, TBT 0 ms, CLS 0.
+- Live screenshots and claim screenshots are under
+  `evidence/polish-5-live/` in this work-order environment. The full
+  finding-to-evidence mapping is `.factory/polish-5.md`.
 
-## Next steps
+## Known gaps
 
-Implement the three findings without weakening the passing demo or claim
-coverage. Add a backup round-trip claim, a 390 px visible-Privacy assertion,
-and an off-origin accessible-name assertion. Then rerun the full round-five
-checklist from a clean clone and against the deployed URL.
+None.
