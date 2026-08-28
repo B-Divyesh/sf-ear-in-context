@@ -3,7 +3,7 @@ import { closeAudio, playNote, playSequence } from './audio';
 import { exercisesByModule, frequencyToMidi, midiName, type Exercise, type ModuleId, type TextureId } from './music';
 import { startPitchMonitor, type PitchMonitor } from './pitch';
 import { chooseExercise, nextLevel, schedule, type ProgressState } from './scheduler';
-import { clearProgress, exportCsv, loadProgress, resetDemoProgress, saveProgress, useDemoStorage } from './storage';
+import { clearProgress, discardDemoProgress, exportCsv, loadProgress, resetDemoProgress, saveProgress, useDemoStorage } from './storage';
 import { captureLicenseFromUrl, checkoutUrl, hasOptimisticUnlock, storeLicense, verifyLicense } from './license';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -37,8 +37,8 @@ if (progress.lastVisit !== today) {
 }
 
 function route(): 'practice' | 'privacy' | 'terms' | 'not-found' {
-  if (location.pathname.startsWith('/privacy')) return 'privacy';
-  if (location.pathname.startsWith('/terms')) return 'terms';
+  if (location.pathname === '/privacy') return 'privacy';
+  if (location.pathname === '/terms') return 'terms';
   if (location.pathname === '/' || location.pathname === '/demo') return 'practice';
   return 'not-found';
 }
@@ -73,6 +73,7 @@ function enterDemo(): void {
 
 function startForReal(): void {
   stopMic();
+  discardDemoProgress();
   isDemo = false;
   useDemoStorage(false);
   progress = loadProgress();
@@ -129,7 +130,7 @@ function submitAnswer(choice: string): void {
   if (progress.sandbox) {
     const preview = exercisesByModule[moduleId].find(item => item.answer === choice);
     if (preview) void playSequence(preview.sequence, texture());
-    announce(`Previewing ${choice}. Sandbox does not score answers.`);
+    announce(`Previewing ${choice}. Explore mode does not score answers.`);
     return;
   }
   if (answer) return;
@@ -266,19 +267,19 @@ function renderHeader(): string {
 }
 
 function renderFooter(): string {
-  return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory</a> · v1.1.0</p></footer>`;
+  return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory</a> · v1.2.0</p></footer>`;
 }
 
 function renderPolicy(kind: 'privacy' | 'terms'): void {
   const privacy = kind === 'privacy';
   app.innerHTML = `${renderHeader()}<main id="main" class="policy"><p class="eyebrow">Plain-language ${privacy ? 'privacy' : 'terms'}</p><h1 tabindex="-1">${privacy ? 'Privacy for your ear practice' : 'Terms for ear practice'}</h1>
-    ${privacy ? `<h2>What is stored</h2><p>Practice history, settings, and any Studio license are stored in your browser's local storage. Microphone audio is analysed live on your device and is never recorded, uploaded, or retained.</p><h2>Network requests</h2><p>The free trainer works without an account. If you buy or verify Studio, your browser contacts the Sociobot billing API with your license token. Sociobot/Dodo is the merchant of record and handles checkout records. This site has no behavioural analytics, ads, or third-party scripts.</p><h2>Your control</h2><p>Use “Erase local progress” in Practice to remove training history. Browser site settings can remove all data, including your locally saved license. CSV export is available to everyone.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>` : `<h2>Using the trainer</h2><p>Ear in Context is provided as an educational practice aid, without a promise of a specific musical result. Protect your hearing: keep device volume comfortable. You may use the free core indefinitely.</p><h2>Studio purchase</h2><p>Studio is a $24 one-time purchase for the extra Clarity and Reed synthesis textures and JSON backup. Checkout is hosted by Sociobot/Dodo, the merchant of record. Refunds are handled there; a refunded or revoked license stops unlocking Studio. Core practice, CSV export, privacy, and accessibility are never paywalled.</p><h2>License and availability</h2><p>A Studio license is for your personal use and may be restored on your devices. Do not resell or publish it. We may improve or discontinue the hosted site, but your locally stored practice data remains under your control.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>`}
+    ${privacy ? `<h2>What is stored</h2><p>Practice history, settings, and any Studio license are stored in your browser's local storage. Microphone audio is analysed live on your device and is never recorded, uploaded, or retained.</p><h2>Network requests</h2><p>The free trainer works without an account. If you buy or verify Studio, your browser contacts the Sociobot billing API with your license token. Sociobot/Dodo is the merchant of record and handles checkout records. This site has no behavioural analytics, ads, or third-party scripts.</p><h2>Your control</h2><p>Use “Erase local progress” in Practice to remove training history. Browser site settings can remove all data, including your locally saved license. CSV export is available to everyone.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>` : `<h2>Using the trainer</h2><p>Ear in Context is provided as an educational practice aid, without a promise of a specific musical result. Protect your hearing: keep device volume comfortable. You may use the free core indefinitely.</p><h2>Studio purchase</h2><p>Studio is a $24 one-time purchase for the extra Clarity and Reed synthesis textures and JSON backup. Checkout is hosted by Sociobot/Dodo, the merchant of record. Refunds are handled there; a refunded or revoked license stops unlocking Studio. Core practice and CSV export stay free.</p><h2>License and availability</h2><p>A Studio license is for your personal use and may be restored on your devices. Do not resell or publish it. We may improve or discontinue the hosted site, but your locally stored practice data remains under your control.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>`}
     <a class="button-link" href="/" data-nav="/">Return to practice</a></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
   bindCommon();
 }
 
 function renderNotFound(): void {
-  app.innerHTML = `${renderHeader()}<main id="main" class="policy not-found"><p class="eyebrow">Lost in the progression</p><h1 tabindex="-1">That practice page does not exist</h1><p>Try the practice table or start with the sample cadence.</p><div class="button-row"><a class="button-link primary" href="/" data-nav="/">Go to practice</a><a class="button-link" href="/demo" data-nav="/demo">Try sample practice</a></div></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
+  app.innerHTML = `${renderHeader()}<main id="main" class="policy not-found"><p class="eyebrow">Wrong turn</p><h1 tabindex="-1">That practice page does not exist</h1><p>Open your practice or try the sample practice.</p><div class="button-row"><a class="button-link primary" href="/" data-nav="/">Open practice</a><a class="button-link" href="/demo" data-nav="/demo">Try sample practice</a></div></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
   bindCommon();
 }
 
@@ -290,8 +291,8 @@ function setRouteMetadata(current: ReturnType<typeof route>): void {
       : current === 'not-found'
         ? { title: 'Page not found — Ear in Context', description: 'This Ear in Context practice page does not exist.' }
         : isDemo
-          ? { title: 'Demo — Ear in Context', description: 'Try a sample harmony practice without changing your saved progress.' }
-          : { title: 'Ear in Context — practise hearing harmony', description: 'Practice hearing harmony in chord patterns with scale-degree, progression, and sung-note exercises.' };
+          ? { title: 'Demo — Ear in Context', description: 'Try the sample practice without changing your saved progress.' }
+          : { title: 'Ear in Context — practise hearing harmony', description: 'Practice hearing harmony in generated chord patterns with note-role, progression, and sung-pitch exercises.' };
   document.title = details.title;
   document.querySelector('meta[name="description"]')?.setAttribute('content', details.description);
   const canonicalPath = isDemo && current === 'practice' ? '/demo' : location.pathname;
@@ -300,6 +301,7 @@ function setRouteMetadata(current: ReturnType<typeof route>): void {
   document.querySelector('meta[property="og:description"]')?.setAttribute('content', details.description);
   document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', details.title);
   document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', details.description);
+  document.querySelector('meta[property="og:url"]')?.setAttribute('content', `${location.origin}${canonicalPath}`);
 }
 
 function finishRoute(): void {
@@ -317,31 +319,31 @@ function render(): void {
   if (current === 'not-found') { renderNotFound(); setRouteMetadata(current); finishRoute(); return; }
   if (current !== 'practice') { renderPolicy(current); setRouteMetadata(current); finishRoute(); return; }
   app.innerHTML = `${renderHeader()}<main id="main">
-    ${isDemo ? `<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span>Try the cadence, choices, and sung-note view.</span><span class="demo-actions"><button data-action="reset-demo">Reset demo</button><button data-action="start-real">Start for real</button></span></aside>` : ''}
-    ${!online ? '<div class="offline-banner" role="status">Offline practice is ready. License checks will resume when you reconnect.</div>' : ''}
+    ${isDemo ? `<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span>Try each practice mode. Your normal progress stays untouched.</span><span class="demo-actions"><button data-action="reset-demo">Reset demo</button><button data-action="start-real">Leave demo and open your practice</button><small>Sample progress is discarded; saved progress is unchanged.</small></span></aside>` : ''}
+    ${!online ? '<div class="offline-banner" role="status">Offline practice is ready.</div>' : ''}
     <section class="hero ${isDemo ? 'demo-hero' : ''}" aria-labelledby="hero-title">
-      <div class="hero-copy"><p class="eyebrow">${isDemo ? 'Sample cadence loaded' : 'Ear training for self-taught musicians'}</p><h1 id="hero-title" tabindex="-1">${isDemo ? 'Sample harmony practice' : 'Practice hearing harmony in real songs'}</h1><p class="dek">${isDemo ? 'Press play, choose the next note, or open Sing it back.' : 'For self-taught musicians who want to hear how notes move together.'}</p>${isDemo ? '' : '<div class="hero-actions"><a class="button-link primary" href="/demo" data-nav="/demo">Try sample practice</a><span>Hear a short chord pattern, then choose the next note.</span></div><ul class="plain-facts"><li>No account</li><li>Practice audio stays in your browser</li><li>$24 Studio is optional</li></ul>'}</div>
+      <div class="hero-copy"><p class="eyebrow">${isDemo ? 'Sample practice ready' : 'Ear training for self-taught musicians'}</p><h1 id="hero-title" tabindex="-1">${isDemo ? 'Sample practice' : 'Practice hearing harmony in chord patterns'}</h1><p class="dek">${isDemo ? 'Play the short chord pattern, choose the next note, or open Sing it back.' : 'For self-taught musicians who want to hear how notes move together.'}</p>${isDemo ? '' : '<div class="hero-actions"><a class="button-link primary" href="/demo" data-nav="/demo">Try sample practice</a><span>Hear a short chord pattern, then choose the next note.</span></div><ul class="plain-facts"><li>No account</li><li>Practice audio stays in your browser</li><li>Core practice and CSV export stay free</li></ul>'}</div>
       <picture><source srcset="/assets/voice-paths.webp" type="image/webp"><img src="/assets/voice-paths.jpg" width="1200" height="800" alt="Paper pitch tokens connected by gently moving teal voice paths" fetchpriority="high" decoding="async"></picture>
     </section>
     <section id="practice" class="practice-shell" aria-labelledby="practice-title">
       <div class="practice-heading"><div><p class="eyebrow">Listen, choose, sing</p><h2 id="practice-title">Today’s ear practice</h2></div><div class="score" aria-label="Session progress"><strong>${progress.answered}</strong> answered <span>·</span> <strong>${accuracy()}%</strong> right</div></div>
       <div class="global-controls" aria-label="Practice controls">
-        <label class="switch"><input type="checkbox" data-control="sandbox" ${progress.sandbox ? 'checked' : ''}><span>Sandbox</span><small>${progress.sandbox ? 'Explore—nothing is scored' : 'Test—answers are scheduled'}</small></label>
-        <label class="switch"><input type="checkbox" data-control="hold" ${progress.holdLevel ? 'checked' : ''}><span>Hold level</span><small>${progress.holdLevel ? 'Difficulty stays here' : 'Advance when ready'}</small></label>
+        <label class="switch"><input type="checkbox" data-control="sandbox" ${progress.sandbox ? 'checked' : ''}><span>Explore mode</span><small>${progress.sandbox ? 'Nothing is scored' : 'Scoring is on'}</small></label>
+        <label class="switch"><input type="checkbox" data-control="hold" ${progress.holdLevel ? 'checked' : ''}><span>Keep current level</span><small>${progress.holdLevel ? 'Level changes are paused' : 'Level can change with your score'}</small></label>
         <label class="level-control"><span>Level</span><select data-control="level" aria-label="Difficulty level"><option value="1" ${progress.level[moduleId] === 1 ? 'selected' : ''}>1 · Ground</option><option value="2" ${progress.level[moduleId] === 2 ? 'selected' : ''}>2 · Colour</option><option value="3" ${progress.level[moduleId] === 3 ? 'selected' : ''}>3 · Tension</option></select></label>
       </div>
       <div class="module-tabs" role="tablist" aria-label="Training module">
-        <button id="module-tab-intervals" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'intervals'}" tabindex="${moduleId === 'intervals' ? '0' : '-1'}" data-module="intervals"><span>01</span> Scale degrees</button>
+        <button id="module-tab-intervals" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'intervals'}" tabindex="${moduleId === 'intervals' ? '0' : '-1'}" data-module="intervals"><span>01</span> Note roles <small>(scale degrees)</small></button>
         <button id="module-tab-progressions" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'progressions'}" tabindex="${moduleId === 'progressions' ? '0' : '-1'}" data-module="progressions"><span>02</span> Progressions</button>
         <button id="module-tab-sing" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'sing'}" tabindex="${moduleId === 'sing' ? '0' : '-1'}" data-module="sing"><span>03</span> Sing it back</button>
       </div>
       <div id="practice-panel" role="tabpanel" tabindex="0" aria-labelledby="module-tab-${moduleId}"></div>
     </section>
-    ${!isDemo ? `<section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a JSON backup. CSV export stays free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Buy Studio</a>`}</div></section>` : ''}
+    ${!isDemo ? `<section class="how-it-works" aria-labelledby="how-title"><p class="eyebrow">Three ways to practise</p><h2 id="how-title">Listen, choose, then sing</h2><ol><li><strong>Play a chord pattern.</strong><span>Hear where the home chord settles.</span></li><li><strong>Name the next note.</strong><span>Use Note roles or compare Progressions.</span></li><li><strong>Sing it back.</strong><span>See one sung pitch on the two-octave keyboard.</span></li></ol></section><section class="boundaries" aria-labelledby="boundaries-title"><div><p class="eyebrow">Clear boundaries</p><h2 id="boundaries-title">Generated patterns, not song recordings</h2></div><p>The practice makes short chord patterns in your browser. It does not load songs or record your voice. Microphone sound is analysed live and is not retained.</p></section><section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a JSON backup. Core practice and CSV export stay free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Buy Studio</a>`}</div></section>` : ''}
     <section class="settings" aria-labelledby="settings-title"><details><summary id="settings-title">Progress, sound & license</summary><div class="settings-grid">
       <div><h3>Sound texture</h3><div class="texture-options"><button data-texture="warm" aria-label="Warm texture, free" aria-pressed="${texture() === 'warm'}">Warm <small>Free</small></button><button data-texture="clarity" aria-label="Clarity texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'clarity'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Clarity <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button><button data-texture="reed" aria-label="Reed texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'reed'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Reed <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button></div></div>
-      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have a local review schedule.` : 'No scored answers yet. Start in Test mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Back up progress as JSON" data-action="backup">Backup JSON</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
-      <form id="license-form"><h3>Restore Studio</h3><label for="license-token">Have a license? Paste it here.</label><input id="license-token" name="license" autocomplete="off" spellcheck="false" required><button aria-label="Verify Studio license" type="submit">Verify license</button><p id="license-status" role="status">${licenseNotice}</p><p class="fine">Checkout and refunds are handled by Sociobot/Dodo. <a href="/terms" data-nav="/terms">Read the terms</a>.</p></form>
+      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have scored answers.` : 'No scored answers yet. Turn off Explore mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Back up progress as JSON" data-action="backup">Backup JSON</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
+      <form id="license-form"><h3>Restore Studio</h3><label for="license-token">Have a license? Paste it here.</label><input id="license-token" name="license" autocomplete="off" spellcheck="false" required><button aria-label="Verify Studio license" type="submit">Verify license</button><p id="license-status" role="status" tabindex="-1">${licenseNotice}</p><p class="fine">Checkout and refunds are handled by Sociobot/Dodo. <a href="/terms" data-nav="/terms">Read the terms</a>.</p></form>
     </div></details></section>
   </main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
   bindCommon();
@@ -354,15 +356,15 @@ function render(): void {
 function renderPractice(): void {
   const panel = document.querySelector<HTMLDivElement>('#practice-panel');
   if (!panel) return;
-  const modeLabel = progress.sandbox ? 'Sandbox · audition choices freely' : 'Test · answer when ready';
+  const modeLabel = progress.sandbox ? 'Explore mode · preview sounds' : 'Scoring mode · answer when ready';
   const result = answer ? `<div class="feedback ${answerCorrect ? 'correct' : 'incorrect'}" role="status"><strong>${answerCorrect ? '✓ You heard the path.' : `↗ The answer was ${exercise.answer}.`}</strong><p>${exercise.explanation}</p><button class="primary" data-action="next">Next sound <kbd>N</kbd></button></div>` : '';
   const choices = exercise.choices.filter(choice => {
     const source = exercisesByModule[moduleId].find(item => item.answer === choice);
     return !source || source.level <= progress.level[moduleId];
   });
   panel.innerHTML = `<article class="exercise" aria-labelledby="exercise-title">
-    <div class="context-panel"><div class="exercise-meta"><span>${modeLabel}</span><span>Level ${exercise.level}</span></div>${voiceDiagram(exercise)}<p class="diagram-caption">Each line is one voice. Short paths mean smoother, more musical movement.</p><button class="listen-button" data-action="play" ${playing ? 'disabled' : ''}><span class="play-icon" aria-hidden="true">▶</span>${playing ? 'Playing…' : answer ? 'Replay context' : 'Play context'} <kbd>Space</kbd></button></div>
-    <div class="answer-panel"><p class="eyebrow">${moduleId === 'sing' ? 'Voice feedback' : 'Your ear'}</p><h3 id="exercise-title">${exercise.prompt}</h3><p class="instruction">${moduleId === 'sing' ? 'Listen first, then start the mic. The marker shows your current note—not a waveform.' : progress.sandbox ? 'Choose any answer to hear that sound. Toggle Sandbox off when you want feedback.' : 'Listen for function, not an isolated shape.'}</p>
+    <div class="context-panel"><div class="exercise-meta"><span>${modeLabel}</span><span>Level ${exercise.level}</span></div>${voiceDiagram(exercise)}<p class="diagram-caption">Each line shows one voice. Short paths show notes changing by small steps.</p><button class="listen-button" data-action="play" ${playing ? 'disabled' : ''}><span class="play-icon" aria-hidden="true">▶</span>${playing ? 'Playing…' : answer ? 'Replay context' : 'Play context'} <kbd>Space</kbd></button></div>
+    <div class="answer-panel"><p class="eyebrow">${moduleId === 'sing' ? 'Voice feedback' : 'Your ear'}</p><h3 id="exercise-title">${exercise.prompt}</h3><p class="instruction">${moduleId === 'sing' ? 'Listen first, then start the mic. The marker shows your current note—not a recording.' : progress.sandbox ? 'Choose any answer to preview its sound. Turn off Explore mode to score your answer.' : 'Listen for the note’s role in the chord pattern.'}</p>
       ${moduleId === 'sing' ? `${pianoKeyboard()}<div class="pitch-readout"><strong id="detected-pitch">${micActive ? 'Listening…' : 'Mic is off'}</strong><span>Target: ${exercise.answer}</span></div><div class="button-row"><button data-action="mic" class="mic-button">${micActive ? 'Stop microphone' : 'Start microphone'}</button>${progress.sandbox ? '<button data-action="next" class="target-button">Try another target</button>' : ''}</div><p id="mic-error" class="inline-error" role="alert" hidden></p>` : `<div class="choice-grid">${choices.map((choice, index) => `<button data-choice="${choice}" ${answer ? 'disabled' : ''} class="${answer && choice === exercise.answer ? 'answer-correct' : answer === choice ? 'answer-wrong' : ''}"><kbd>${index + 1}</kbd><span>${choice}</span>${progress.sandbox ? '<small>Preview</small>' : ''}</button>`).join('')}</div>`}
       ${result}
     </div>
@@ -437,6 +439,9 @@ function bindPracticeShell(): void {
     studioUnlocked = verdict?.valid ?? false;
     licenseNotice = verdict === null ? 'Could not verify while offline. Try again when connected.' : verdict.valid ? 'License verified. Studio is unlocked.' : 'That license is not active. Check the token or buy Studio.';
     render();
+    const details = document.querySelector<HTMLDetailsElement>('.settings details');
+    if (details) details.open = true;
+    document.querySelector<HTMLElement>('#license-status')?.focus();
   });
 }
 
@@ -484,7 +489,7 @@ window.addEventListener('beforeunload', () => { stopMic(); closeAudio(); });
 window.addEventListener('keydown', event => {
   if (route() !== 'practice' || ['INPUT', 'SELECT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName)) return;
   if (event.code === 'Space') { event.preventDefault(); void playCurrent(); }
-  if (event.key.toLowerCase() === 's') { progress.sandbox = !progress.sandbox; answer = null; save(); render(); }
+  if (event.key.toLowerCase() === 'e') { progress.sandbox = !progress.sandbox; answer = null; save(); render(); }
   if (event.key.toLowerCase() === 'h') { progress.holdLevel = !progress.holdLevel; save(); render(); }
   if (event.key.toLowerCase() === 'n' && answer) nextExercise();
   const number = Number(event.key);

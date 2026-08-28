@@ -1,44 +1,114 @@
 [
   {
     "id": "demo-isolation",
-    "claim": "Demo — sample data, nothing is saved",
-    "where": "/demo banner and landing action",
+    "claim": "The sample practice never reads or changes normal progress, and leaving it discards sample progress.",
+    "where": "/demo banner, landing action, README",
     "test": "npm run test:claims -- --grep @claim:demo-isolation",
-    "sandbox": "Fresh browser context seeds real progress, opens ?demo=1, answers a sample question, and compares real and demo localStorage keys."
+    "sandbox": "Fresh context seeds normal progress, enters ?demo=1, scores and resets a sample answer, leaves, and compares both storage namespaces."
+  },
+  {
+    "id": "chord-pattern-practice",
+    "claim": "Practice uses generated chord patterns across note-role, progression, and singing exercises.",
+    "where": "home headline, how it works, README",
+    "test": "npm run test:claims -- --grep @claim:chord-pattern-practice",
+    "sandbox": "Fresh /demo context plays generated Web Audio oscillators and opens all three practice modes."
+  },
+  {
+    "id": "cadence-choice-flow",
+    "claim": "Hear a short chord pattern, then choose the next note.",
+    "where": "landing action explanation",
+    "test": "npm run test:claims -- --grep @claim:cadence-choice-flow",
+    "sandbox": "Fresh /demo context plays the pattern, enables scoring, answers, and observes feedback plus a changed score."
+  },
+  {
+    "id": "explore-unscored",
+    "claim": "Explore mode does not score or schedule answers.",
+    "where": "practice controls and README",
+    "test": "npm run test:claims -- --grep @claim:explore-unscored",
+    "sandbox": "Fresh /demo context previews an answer and compares score and review records before and after."
+  },
+  {
+    "id": "explore-choice-preview",
+    "claim": "Choose an answer in Explore mode to preview its sound.",
+    "where": "practice instruction",
+    "test": "npm run test:claims -- --grep @claim:explore-choice-preview",
+    "sandbox": "Fresh /demo context instruments Web Audio oscillator creation, chooses an answer, and confirms playback without disabling choices."
+  },
+  {
+    "id": "choose-or-sing",
+    "claim": "Name or sing the next note.",
+    "where": "how it works, footer, README",
+    "test": "npm run test:claims -- --grep @claim:choose-or-sing",
+    "sandbox": "Fresh /demo context completes a named-note answer, opens Sing it back, and starts a permitted fake microphone stream."
+  },
+  {
+    "id": "voice-path-diagram",
+    "claim": "Each diagram line shows one voice, and short paths show small note steps.",
+    "where": "practice diagram caption",
+    "test": "npm run test:claims -- --grep @claim:voice-path-diagram",
+    "sandbox": "Fresh /demo context compares SVG path count with chord voice count and checks the plain caption."
+  },
+  {
+    "id": "keyboard-controls",
+    "claim": "Space plays, E toggles Explore mode, H keeps the level, number keys answer, and N opens the next question.",
+    "where": "visible keyboard hints and practice controls",
+    "test": "npm run test:claims -- --grep @claim:keyboard-controls",
+    "sandbox": "Fresh /demo context uses only keyboard shortcuts and asserts audio, control state, answer feedback, and next-question state."
+  },
+  {
+    "id": "keep-level",
+    "claim": "Keep current level prevents automatic level changes.",
+    "where": "practice controls",
+    "test": "npm run test:claims -- --grep @claim:keep-level",
+    "sandbox": "Fresh /demo state reaches the advancement threshold twice and compares the resulting level with the control off and on."
   },
   {
     "id": "private-audio",
-    "claim": "Practice audio stays in your browser",
-    "where": "landing facts",
+    "claim": "Practice audio stays in your browser; microphone sound is analysed live and not retained.",
+    "where": "landing facts, boundaries, privacy, README",
     "test": "npm run test:claims -- --grep @claim:private-audio",
-    "sandbox": "Fresh /demo context plays the sample and asserts every request is same-origin."
+    "sandbox": "Fresh /demo context intercepts the full play, preview, microphone-start, and microphone-stop flow and permits same-origin requests only."
   },
   {
     "id": "no-account",
-    "claim": "No account",
-    "where": "landing facts",
+    "claim": "No account is required for core practice.",
+    "where": "landing facts, privacy, README",
     "test": "npm run test:claims -- --grep @claim:no-account",
-    "sandbox": "Fresh /demo context reaches the seeded practice without a sign-in or account-creation step."
+    "sandbox": "Fresh /demo context reaches the seeded live practice without a sign-in or account-creation step."
+  },
+  {
+    "id": "core-free",
+    "claim": "Core practice and CSV export stay free.",
+    "where": "landing facts, Studio section, terms, README",
+    "test": "npm run test:claims -- --grep @claim:core-free",
+    "sandbox": "Fresh unlicensed context opens all three practice modes and the CSV action while confirming paid JSON backup stays separate."
+  },
+  {
+    "id": "local-data-control",
+    "claim": "Practice history and settings are stored in local storage, and Erase local progress removes practice history.",
+    "where": "privacy page and data controls",
+    "test": "npm run test:claims -- --grep @claim:local-data-control",
+    "sandbox": "Fresh context enters through /demo, leaves it, saves a scored answer and theme, reloads, confirms persistence, erases progress, and checks storage."
   },
   {
     "id": "csv-export",
-    "claim": "CSV export is free",
-    "where": "landing facts and export control",
+    "claim": "CSV export includes the progress log.",
+    "where": "Studio section, data controls, privacy, README",
     "test": "npm run test:claims -- --grep @claim:csv-export",
-    "sandbox": "Fresh /demo context downloads CSV and checks its header and two seeded review rows."
+    "sandbox": "Fresh /demo context downloads CSV and checks its exact header and two seeded review rows."
   },
   {
     "id": "studio-unlock",
-    "claim": "Studio adds Clarity and Reed textures plus a JSON backup for a $24 one-time purchase",
-    "where": "Studio section and terms",
+    "claim": "Studio adds Clarity and Reed textures plus JSON backup for a $24 one-time purchase.",
+    "where": "Studio section, terms, README",
     "test": "npm run test:claims -- --grep @claim:studio-unlock",
-    "sandbox": "Fresh context checks the production checkout URL and price, then restores a local test license and downloads the JSON backup."
+    "sandbox": "Fresh context checks checkout, price and purchase type, opens paid textures and JSON backup, then intercepts a restore request to the production verification URL."
   },
   {
     "id": "offline-reload",
-    "claim": "Offline practice is ready after the first visit",
-    "where": "offline status banner and README",
+    "claim": "Offline practice is ready after the first visit.",
+    "where": "offline status and README",
     "test": "npm run test:claims -- --grep @claim:offline-reload",
-    "sandbox": "Fresh /demo context establishes service-worker control, goes offline, reloads, and finds the sample practice heading."
+    "sandbox": "Fresh /demo context establishes service-worker control, goes offline, reloads, and finds the sample practice plus offline status."
   }
 ]

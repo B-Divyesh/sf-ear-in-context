@@ -14,6 +14,7 @@ The single visual idea also explains state. Open rings are notes to hear, filled
 - `ink-soft #59625D`: secondary text (5.7:1 on paper).
 - `signal #C53F32`: sung/current pitch, errors, and the main action; use dark ink or white according to context.
 - `signal-dark #8F2B23`: accessible coral text and hover state.
+- `signal-contrast #FFFFFF` in light mode and `#101714` in dark mode: action text chosen for 4.5:1 contrast.
 - `tuning #1E6F78`: stable voice-leading paths and success feedback.
 - `tuning-dark #15545C`: link/action text on paper.
 - `sun #D59B2D`: caution, cadence arrival, and due-review accents.
@@ -39,9 +40,9 @@ Every target is at least 44px. Focus is a 3px sun outline with 3px offset. The o
 
 - **Listen** draws the voice paths in order while sounding each harmonic event.
 - **Answer** fills one of the existing geometric choices; feedback appears in the same place, not in a detached toast.
-- **Sandbox** turns the test boundary into a dotted line: sounds and choices still work, scheduling and scoring stop.
+- **Explore mode** turns the scoring boundary into a dotted line: choices still play, while scheduling and scoring stop.
 - **Hold level** adds a double outline around the level control and freezes automatic difficulty changes without stopping spaced repetition.
-- Keyboard shortcuts mirror visible controls: Space plays/replays, 1–6 chooses an answer, S toggles sandbox, H toggles hold, and N advances after feedback.
+- Keyboard shortcuts mirror visible controls: Space plays/replays, 1–6 chooses an answer, E toggles Explore mode, H keeps the level, and N advances after feedback.
 
 ## Motion policy
 

@@ -1,41 +1,50 @@
 # Ear in Context
 
-Ear in Context is a browser practice table for self-taught musicians. Start the
-[sample practice](/demo), hear a short chord pattern, and choose or sing the
-next note.
+Ear in Context is a browser ear trainer for self-taught musicians. It uses
+generated chord patterns instead of song recordings.
 
-## Use it
+[Try the sample practice](https://ear-in-context.sociobot.in/demo). Play a
+short chord pattern, choose the next note, or sing it back.
 
-`/demo` and `/?demo=1` open the isolated sample. The demo banner includes
-**Reset demo** and **Start for real**. Its progress uses the
-`demo:ear-in-context:progress:v1` local-storage key.
+## Use the sample practice
 
-The product includes scale-degree, progression, and sung-note practice. Its
-executable behavioural claims and the test command for each are in
-[`.factory/claims.json`](.factory/claims.json). The demo setup is documented in
-[`.factory/demo.md`](.factory/demo.md).
+`/demo` and `/?demo=1` open the same sample practice. The banner offers
+**Reset demo** and **Leave demo and open your practice**.
+
+Sample progress is separate from normal progress. Leaving the demo discards
+the sample and keeps normal progress unchanged. Explore mode previews choices
+without scoring them.
+
+The tested product promises and their commands are in
+[`.factory/claims.json`](.factory/claims.json). Sample contents and storage are
+documented in [`.factory/demo.md`](.factory/demo.md).
 
 ## Develop and verify
 
-Requires Node.js 20 or newer.
+Use Node.js 20 or newer.
 
 ```bash
 npm ci
 npm test
 npm run build
 npm run test:browser
-npm run test:claims -- --grep @claim:demo-isolation
 npm run audit:a11y
 ```
 
-Start `npm run preview -- --host 127.0.0.1` before `npm run audit:a11y`. The
-production build is `dist/`, with `dist/index.html` at its root.
+Start `npm run preview -- --host 127.0.0.1` before `npm run audit:a11y`. Run
+each command in `.factory/claims.json` to verify one product promise at a time.
 
-## Privacy, legal, and deployment
+The production build is `dist/`, with `dist/index.html` at its root. Deploy
+`dist/` to a static host that applies `staticwebapp.config.json`.
 
-Read [/privacy](/privacy) and [/terms](/terms) for the user-facing policies.
-The static build deploys as an Azure Static Web App; `staticwebapp.config.json`
-ships with the output and provides headers and the navigation fallback.
+## Privacy and legal pages
+
+Core practice needs no account. Practice audio stays in the browser. Core
+practice and CSV export stay free.
+
+Studio is an optional $24 one-time purchase. It adds two sound textures and a
+JSON backup. Read [/privacy](https://ear-in-context.sociobot.in/privacy) and
+[/terms](https://ear-in-context.sociobot.in/terms) for the user-facing policies.
 
 ## License
 

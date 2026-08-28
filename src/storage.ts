@@ -33,6 +33,11 @@ export function clearProgress(): void {
   localStorage.removeItem(key);
 }
 
+/** Leaving the sample removes its disposable state without touching real progress. */
+export function discardDemoProgress(): void {
+  localStorage.removeItem(DEMO_KEY);
+}
+
 export function resetDemoProgress(): ProgressState {
   const sample = initialProgress();
   // A small, representative practice record makes the sample feel used while

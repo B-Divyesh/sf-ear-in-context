@@ -29,6 +29,10 @@ await page.route('**/*', async route => {
 await page.goto(url, { waitUntil: 'networkidle' });
 
 const initialResults = await new AxeBuilder({ page }).analyze();
+await page.getByRole('button', { name: 'Switch color theme' }).click();
+const darkResults = await new AxeBuilder({ page }).analyze();
+if (await page.locator('html').getAttribute('data-theme') !== 'dark') errors.push('Theme control did not apply the dark treatment.');
+await page.getByRole('button', { name: 'Switch color theme' }).click();
 
 // Exercise the state that was previously missed by the initial-route audit.
 const tabs = page.getByRole('tab');
@@ -91,11 +95,23 @@ if (secondMarkerLeft <= firstMarkerLeft + 100) errors.push('Pitch marker did not
 const singResults = await new AxeBuilder({ page }).analyze();
 await page.goto(new URL('/demo', url).href, { waitUntil: 'networkidle' });
 const demoResults = await new AxeBuilder({ page }).analyze();
-const serious = [...initialResults.violations, ...singResults.violations, ...demoResults.violations]
+const routeResults = [];
+for (const path of ['/privacy', '/terms', '/not-a-real-page']) {
+  await page.goto(new URL(path, url).href, { waitUntil: 'networkidle' });
+  routeResults.push(await new AxeBuilder({ page }).analyze());
+  if (await page.locator('main h1').count() !== 1) errors.push(`${path} does not have exactly one main heading.`);
+}
+const serious = [...initialResults.violations, ...darkResults.violations, ...singResults.violations, ...demoResults.violations, ...routeResults.flatMap(result => result.violations)]
   .filter(item => ['serious', 'critical'].includes(item.impact ?? ''));
 console.log(JSON.stringify({
   seriousViolations: serious.length,
-  violations: serious.map(item => ({ id: item.id, impact: item.impact, nodes: item.nodes.length })),
+  violations: serious.map(item => ({
+    id: item.id,
+    impact: item.impact,
+    nodes: item.nodes.map(node => ({ target: node.target, summary: node.failureSummary })),
+  })),
+  themes: ['light', 'dark'],
+  routes: ['/', '/demo', '/privacy', '/terms', '/not-a-real-page'],
   keyboard: { whiteKeys: keyboard.whites.length, blackKeys: keyboard.blacks.length, markerMoved: secondMarkerLeft > firstMarkerLeft + 100 },
   consoleErrors: errors,
 }, null, 2));

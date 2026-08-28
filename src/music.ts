@@ -14,7 +14,7 @@ export interface Exercise {
 }
 
 export const NOTE_NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
-export const DEGREE_NAMES = ['1 · tonic', '2 · supertonic', '3 · mediant', '4 · subdominant', '5 · dominant', '6 · submediant', '7 · leading tone'];
+export const DEGREE_NAMES = ['1 · home note (tonic)', '2 · second (supertonic)', '3 · third (mediant)', '4 · fourth (subdominant)', '5 · fifth (dominant)', '6 · sixth (submediant)', '7 · leading tone'];
 
 const cadence = [[53, 57, 60], [55, 59, 62], [48, 55, 64]]; // F–G–C, close and singable
 const degreeMidi = [60, 62, 64, 65, 67, 69, 71];
@@ -22,7 +22,7 @@ const degreeMidi = [60, 62, 64, 65, 67, 69, 71];
 export const intervalExercises: Exercise[] = degreeMidi.map((midi, index) => ({
   id: `degree-${index + 1}`,
   module: 'intervals',
-  prompt: 'Which scale degree follows the cadence?',
+  prompt: 'Which note role comes after the home chord?',
   answer: DEGREE_NAMES[index],
   choices: DEGREE_NAMES,
   level: index < 3 ? 1 : index < 6 ? 2 : 3,
@@ -44,7 +44,7 @@ const progressionChoices = progressionSeeds.map(item => item.answer);
 export const progressionExercises: Exercise[] = progressionSeeds.map(item => ({
   id: `progression-${item.id}`,
   module: 'progressions',
-  prompt: 'Which path did the harmony take?',
+  prompt: 'Which chord pattern did you hear?',
   answer: item.answer,
   choices: progressionChoices,
   level: item.level,
