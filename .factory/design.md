@@ -56,3 +56,7 @@ The hero illustration is a generated abstract still-life of paper-cut pitch circ
 Subject: an abstract tabletop harmonic machine, four sequences of circular pitch tokens connected by gently bending wire paths, clear voice-leading from chord to chord. World: quiet musician's workbench, tactile paper construction, modernist generative geometry. Materials: warm uncoated paper, charcoal ink, muted coral card, oxidised teal wire, tiny ochre registration marks. Light: soft side daylight, crisp but subtle paper shadows. Lens/composition: overhead 50mm, asymmetric crop, generous empty paper area, no horizon. Palette words: warm bone, near-black ink, signal coral, tuning teal, restrained ochre. Negative list: no people, no hands, no instruments, no piano keyboard, no text, no letters, no logos, no watermark, no gradients, no neon, no glossy 3D, no music notation, no brand symbols.
 
 Asset generated 2026-08-27 with the factory Azure OpenAI image deployment via `/opt/fleet/lib/gen-image.sh`. The generated image is original to this product, stored with its prompt sidecar under `assets/src/`, and disclosed in the footer. Production derivatives are a locally optimised 40 KB WebP and 76 KB JPEG fallback; no remote asset calls are used.
+
+The 1200 × 630 social image and 180 px touch image are local crops of this same
+reviewed original asset, created 2026-08-28; they introduce no third-party
+material.
