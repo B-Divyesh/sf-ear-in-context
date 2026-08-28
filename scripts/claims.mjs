@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from 'playwright';
 
@@ -9,6 +9,7 @@ const grepIndex = process.argv.indexOf('--grep');
 const filter = grepIndex >= 0 ? process.argv[grepIndex + 1] : '';
 const screenshotDir = process.env.CLAIM_EVIDENCE_DIR ?? 'test-results/claims';
 const browserScreenshot = process.env.BROWSER_EVIDENCE_PATH ?? 'test-results/browser-mobile.png';
+const billingContract = JSON.parse(await readFile(new URL('../tests/fixtures/sociobot-billing-contract.json', import.meta.url), 'utf8'));
 const useAzureEmulator = !filter && !liveBase;
 const serverOptions = { stdio: 'ignore', detached: process.platform !== 'win32' };
 const server = liveBase
@@ -446,7 +447,7 @@ const tests = [
       assert(await page.getByRole('tab').count() === 3, 'a core practice mode is gated');
       await page.getByText('Progress, sound & license').click();
       assert(await page.getByRole('button', { name: 'Export progress as CSV' }).isEnabled(), 'CSV export is gated');
-      assert(await page.getByRole('button', { name: 'Back up progress as JSON' }).count() === 0, 'paid JSON backup appeared without Studio');
+      assert(await page.getByRole('button', { name: 'Download progress backup' }).count() === 0, 'paid progress backup appeared without Studio');
       await shot(page, 'core-free');
       await context.close();
     },
@@ -457,7 +458,7 @@ const tests = [
       const { context, page } = await fresh(browser);
       await page.goto(`${base}/demo`);
       await page.getByRole('button', { name: 'Open your practice' }).click();
-      await page.getByRole('button', { name: 'Switch color theme' }).click();
+      await page.getByRole('button', { name: 'Use dark theme' }).click();
       await page.getByLabel(/Explore mode/).uncheck();
       await page.locator('[data-choice]').first().click();
       let stored = await page.evaluate(() => ({ progress: localStorage.getItem('ear-in-context:progress:v1'), theme: localStorage.getItem('ear-in-context:theme') }));
@@ -496,15 +497,22 @@ const tests = [
     id: 'studio-unlock',
     async run(browser) {
       const { context, page } = await fresh(browser);
+      const verificationRequests = [];
+      await page.route('https://api.sociobot.in/api/v1/products/ear-in-context/verify?**', async route => {
+        const url = route.request().url();
+        const token = new URL(url).searchParams.get('license');
+        verificationRequests.push({ url, token });
+        const revoked = token === 'revoked-license';
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: !revoked, reason: revoked ? 'revoked' : 'ok' }) });
+      });
       await page.goto(`${base}/`);
       assert(await page.getByText('$24', { exact: true }).count() === 1, 'Studio price is not shown');
       assert(await page.getByText('one-time purchase', { exact: true }).count() === 1, 'purchase type is not shown');
       assert(await page.locator('a[href="https://api.sociobot.in/api/v1/products/ear-in-context/checkout"]').count() === 1, 'Studio checkout does not use the production Sociobot URL');
-      await page.evaluate(() => {
-        localStorage.setItem('sb_license:ear-in-context', 'test-license');
-        localStorage.setItem('sb_license_verdict:ear-in-context', JSON.stringify({ valid: true, checkedAt: Date.now() }));
-      });
-      await page.reload();
+      await page.goto(`${base}/?license=return-license`);
+      await page.waitForURL(`${base}/`);
+      assert(!new URL(page.url()).searchParams.has('license'), 'license token remained in the return URL');
+      assert(await page.evaluate(() => localStorage.getItem('sb_license:ear-in-context')) === 'return-license', 'return URL did not store the Studio license');
       await page.getByText('Studio unlocked').waitFor();
       await page.getByText('Progress, sound & license').click();
       for (const name of ['Clarity texture, Studio', 'Reed texture, Studio']) {
@@ -512,20 +520,68 @@ const tests = [
       }
       await page.getByRole('button', { name: 'Clarity texture, Studio' }).click();
       await page.getByText('Progress, sound & license').click();
-      assert(await page.getByText('Back up JSON', { exact: true }).count() === 1, 'backup action does not use a verb');
+      assert(await page.getByText('Download progress backup', { exact: true }).count() === 1, 'backup action does not name its result');
       const download = page.waitForEvent('download');
-      await page.getByRole('button', { name: 'Back up progress as JSON' }).click();
+      await page.getByRole('button', { name: 'Download progress backup' }).click();
       assert((await download).suggestedFilename() === 'ear-in-context-backup.json', 'Studio backup did not download');
-      let verifyUrl = '';
-      await page.route('https://api.sociobot.in/api/v1/products/ear-in-context/verify?**', async route => {
-        verifyUrl = route.request().url();
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, reason: 'ok' }) });
-      });
       await page.getByLabel('Have a license? Paste it here.').fill('restored-license');
       await page.getByRole('button', { name: 'Verify Studio license' }).click();
       await page.getByText('License verified. Studio is unlocked.').waitFor();
-      assert(verifyUrl.endsWith('license=restored-license'), `license verification used the wrong URL: ${verifyUrl}`);
+      assert(await page.evaluate(() => localStorage.getItem('sb_license:ear-in-context')) === 'restored-license', 'restore form did not store the Studio license');
+      assert(verificationRequests.some(request => request.url.endsWith('license=restored-license')), `license verification used the wrong URL: ${JSON.stringify(verificationRequests)}`);
+      await page.getByLabel('Have a license? Paste it here.').fill('revoked-license');
+      await page.getByRole('button', { name: 'Verify Studio license' }).click();
+      await page.getByText('That license is not active. Check the token or buy Studio.').waitFor();
+      assert(await page.getByText('Studio unlocked', { exact: false }).count() === 0, 'revoked license left Studio unlocked');
+      const settings = page.locator('.settings details');
+      if (!(await settings.evaluate(element => element.hasAttribute('open')))) await page.getByText('Progress, sound & license').click();
+      assert(await page.getByRole('button', { name: 'Clarity texture, locked' }).count() === 1, 'revoked license did not lock Studio textures');
+      assert(await page.getByRole('button', { name: 'Download progress backup' }).count() === 0, 'revoked license left the paid backup available');
+      await page.getByRole('button', { name: 'Remove stored license' }).click();
+      await page.getByText('Stored Studio license removed.').waitFor();
+      const licenseState = await page.evaluate(() => ({ token: localStorage.getItem('sb_license:ear-in-context'), verdict: localStorage.getItem('sb_license_verdict:ear-in-context') }));
+      assert(licenseState.token === null && licenseState.verdict === null, `removing the license left data behind: ${JSON.stringify(licenseState)}`);
       await shot(page, 'studio-unlock');
+      await context.close();
+    },
+  },
+  {
+    id: 'billing-contract',
+    async run(browser) {
+      const { context, page } = await fresh(browser);
+      assert(billingContract.schema_version === 1, 'billing contract fixture schema is unknown');
+      assert(billingContract.product.slug === 'ear-in-context', 'billing contract fixture has the wrong product');
+      assert(billingContract.product.price_usd === 24 && billingContract.product.purchase_type === 'one-time', 'billing contract fixture has the wrong price or purchase type');
+      assert(billingContract.checkout.status === 303 && billingContract.checkout.redirect_origin === 'https://checkout.dodopayments.com', 'billing contract fixture does not record the checkout redirect');
+      await page.goto(`${base}/`);
+      assert(await page.getByText('$24', { exact: true }).count() === 1, 'Studio price is not shown');
+      assert(await page.getByText('one-time purchase', { exact: true }).count() === 1, 'Studio purchase type is not shown');
+      assert(await page.locator(`a[href="${billingContract.checkout.url}"]`).count() === 1, 'Studio checkout link does not match the recorded Sociobot contract');
+      await page.getByText('Progress, sound & license').click();
+      assert(await page.getByText('Studio checkout opens on Sociobot.').count() === 1, 'checkout wording is not the tested, narrow statement');
+      await shot(page, 'billing-contract');
+      await context.close();
+    },
+  },
+  {
+    id: 'no-third-party-runtime',
+    async run(browser) {
+      const routes = ['/', '/demo', '/privacy', '/terms', '/not-a-real-page'];
+      for (const path of routes) {
+        const { context, page } = await fresh(browser);
+        const requests = [];
+        page.on('request', request => requests.push(request.url()));
+        await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
+        assert(requests.every(url => new URL(url).origin === base), `${path} loaded an off-origin runtime request: ${JSON.stringify(requests)}`);
+        const embedded = await page.evaluate(() => Array.from(document.querySelectorAll('script[src], iframe[src]')).map(element => ({ tag: element.tagName, src: element.getAttribute('src') ?? '' })));
+        assert(embedded.every(item => !/^https?:\/\//i.test(item.src)), `${path} embeds a third-party script or frame: ${JSON.stringify(embedded)}`);
+        const adLikeElements = await page.locator('[data-analytics], [data-ad], [id*="advert" i], [class*="advert" i]').count();
+        assert(adLikeElements === 0, `${path} contains an analytics or ad-like runtime element`);
+        await context.close();
+      }
+      const { context, page } = await fresh(browser);
+      await page.goto(`${base}/privacy`);
+      await shot(page, 'no-third-party-runtime');
       await context.close();
     },
   },
@@ -584,8 +640,9 @@ async function browserChecks(browser) {
   const firstScreen = await page.getByRole('heading', { name: 'Practice hearing harmony in chord patterns' }).isVisible()
     && await page.getByRole('link', { name: 'Try sample practice' }).isVisible();
   assert(firstScreen, 'mobile first screen does not show the job and sample action');
-  await page.getByRole('button', { name: 'Switch color theme' }).click();
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
   assert(await page.locator('html').getAttribute('data-theme') === 'dark', 'theme control did not apply dark mode');
+  assert(await page.getByRole('button', { name: 'Use light theme' }).count() === 1, 'theme control did not name the next visible result');
   const smallTargets = await page.evaluate(() => Array.from(document.querySelectorAll('a, button, select, summary, input[type="checkbox"]'))
     .filter(element => element.getClientRects().length > 0)
     .map(element => {

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-08-28T13:01:06Z",
+  "source": "HEAD https://api.sociobot.in/api/v1/products/ear-in-context/checkout",
+  "product": {
+    "slug": "ear-in-context",
+    "price_usd": 24,
+    "purchase_type": "one-time"
+  },
+  "checkout": {
+    "url": "https://api.sociobot.in/api/v1/products/ear-in-context/checkout",
+    "status": 303,
+    "redirect_origin": "https://checkout.dodopayments.com"
+  }
+}

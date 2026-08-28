@@ -266,7 +266,8 @@ footer a, .policy p a { min-width: 44px; min-height: 44px; display: inline-flex;
   .site-header nav { gap: 11px; }
   .site-header nav > a { display: inline; font-size: 12px; }
   .site-header nav > a:first-child, .site-header nav > a:nth-child(3) { display: none; }
-  .theme-button span { display: none; }
+  .theme-button { min-width: 112px; padding: 8px 9px; font-size: 12px; }
+  .theme-button > span:first-child { font-size: 14px; }
   .hero { padding-top: 36px; gap: 32px; }
   .hero .button-link { width: 100%; }
   .hero-actions { align-items: stretch; }

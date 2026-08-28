@@ -99,10 +99,10 @@
   },
   {
     "id": "core-free",
-    "claim": "Core practice and CSV export stay free.",
+    "claim": "Core practice and CSV export work without Studio.",
     "where": "landing facts, Studio section, terms, README",
     "test": "npm run test:claims -- --grep @claim:core-free",
-    "sandbox": "Fresh unlicensed context opens all three practice modes and the CSV action while confirming paid JSON backup stays separate."
+    "sandbox": "Fresh unlicensed context opens all three practice modes and the CSV action while confirming the paid progress backup stays separate."
   },
   {
     "id": "local-data-control",
@@ -120,10 +120,24 @@
   },
   {
     "id": "studio-unlock",
-    "claim": "Studio adds Clarity and Reed textures plus JSON backup for a $24 one-time purchase.",
+    "claim": "Studio adds Clarity and Reed textures plus a downloadable progress backup for a $24 one-time purchase; valid licenses unlock it and revoked licenses lock it.",
     "where": "Studio section, terms, README",
     "test": "npm run test:claims -- --grep @claim:studio-unlock",
-    "sandbox": "Fresh context checks checkout, price and purchase type, opens paid textures and JSON backup, then intercepts a restore request to the production verification URL."
+    "sandbox": "Fresh context stores licenses from the return URL and restore form, checks paid textures and backup, intercepts valid and revoked verification responses, and removes the stored license."
+  },
+  {
+    "id": "billing-contract",
+    "claim": "Studio checkout opens on Sociobot for a $24 one-time purchase.",
+    "where": "settings, privacy, terms, README",
+    "test": "npm run test:claims -- --grep @claim:billing-contract",
+    "sandbox": "Fresh context checks the visible price and purchase type, then compares the checkout link with the recorded Sociobot billing-contract fixture."
+  },
+  {
+    "id": "no-third-party-runtime",
+    "claim": "Practice pages load no behavioural analytics, ads, or third-party scripts.",
+    "where": "privacy page",
+    "test": "npm run test:claims -- --grep @claim:no-third-party-runtime",
+    "sandbox": "Fresh contexts load home, demo, privacy, terms, and not-found routes while recording every request and checking scripts, frames, and ad-like elements."
   },
   {
     "id": "offline-reload",

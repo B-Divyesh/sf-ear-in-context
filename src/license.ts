@@ -27,6 +27,16 @@ export function storeLicense(token: string): void {
   localStorage.removeItem(VERDICT_KEY);
 }
 
+/** A person can remove the locally stored unlock without changing practice data. */
+export function removeLicense(): void {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(VERDICT_KEY);
+}
+
+export function hasStoredLicense(): boolean {
+  return localStorage.getItem(TOKEN_KEY) !== null;
+}
+
 export function hasOptimisticUnlock(): boolean {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return false;

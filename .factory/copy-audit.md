@@ -1,18 +1,28 @@
-# Copy audit — polish round 3
+# Copy audit — polish round 4
 
-Counts treat hyphenated terms and product names as one word. No sentence is
-over 22 words. No banned plain-words term remains in visitor copy.
+Counts treat hyphenated terms, product names, paths, and shortcut labels as one
+word. No visitor sentence exceeds 22 words. No banned plain-words term remains.
 
 ## Landing page
 
 | Copy | Words | Claim or result |
 | --- | ---: | --- |
+| Skip to practice | 3 | Clear skip link |
+| Ear in Context | 3 | Product name |
+| Practice | 1 | Clear nav link |
+| Demo | 1 | Clear nav link |
+| Privacy | 1 | Clear nav link |
+| Use dark theme / Use light theme | 4 | The button names the next result. |
+| Ear training for self-taught musicians | 5 | Clear audience label |
 | Practice hearing harmony in chord patterns | 6 | `chord-pattern-practice` |
 | For self-taught musicians who want to hear how notes move together. | 11 | Audience is named. |
+| Try sample practice | 3 | Clear primary action |
 | Hear a short chord pattern, then choose the next note. | 10 | `cadence-choice-flow` |
 | No account | 2 | `no-account` |
 | Practice audio stays in your browser | 6 | `private-audio` |
-| Core practice and CSV export stay free | 7 | `core-free` |
+| Core practice and CSV export work without Studio | 9 | `core-free` |
+| Paper pitch tokens connected by gently moving teal voice paths | 10 | Purposeful image alt text |
+| Today’s ear practice | 3 | Clear section heading |
 | Nothing is scored | 3 | `explore-unscored` |
 | Level changes are paused | 4 | Direct control state. |
 | Level can change with your score | 6 | `keep-level` |
@@ -21,34 +31,54 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | Short paths show notes changing by small steps. | 8 | `voice-path-diagram` |
 | Choose any answer to preview its sound. | 7 | `explore-choice-preview` |
 | Turn off Explore mode to score your answer. | 8 | `cadence-choice-flow` |
+| Play chord pattern / Replay chord pattern | 6 | Result-naming actions. |
+| Open next question | 3 | Result-naming action. |
+| Three ways to practice | 4 | One spelling convention. |
 | Play a chord pattern. | 4 | `chord-pattern-practice` |
-| Hear where the home chord settles. | 6 | Practice instruction. |
 | Name the next note. | 4 | `choose-or-sing` |
-| Use Note roles or compare Progressions. | 6 | `chord-pattern-practice` |
 | Sing it back. | 3 | `choose-or-sing` |
 | See one sung pitch on the two-octave keyboard. | 8 | `sung-pitch-feedback` |
-| Generated patterns, not song recordings | 5 | `chord-pattern-practice` |
 | The practice makes short chord patterns in your browser. | 9 | `chord-pattern-practice` |
-| It does not load songs or record your voice. | 9 | `private-audio` |
+| It does not load songs or record your voice. | 9 | `chord-pattern-practice`, `private-audio` |
 | Microphone sound is analysed live and is not retained. | 9 | `private-audio` |
-| Studio adds Clarity and Reed textures plus a JSON backup. | 10 | `studio-unlock` |
-| Core practice and CSV export stay free. | 7 | `core-free` |
-| Practice history and settings are stored in your browser’s local storage. | 10 | `local-data-control` |
-| Use Erase local progress to remove training history. | 8 | `local-data-control` |
+| Studio adds Clarity and Reed textures plus a downloadable progress backup. | 10 | `studio-unlock` |
+| Core practice and CSV export work without Studio. | 9 | `core-free` |
+| $24 / one-time purchase | 3 | `billing-contract`, `studio-unlock` |
+| Download progress backup | 3 | Result-naming action. |
+| Studio checkout opens on Sociobot. | 5 | `billing-contract` |
+| Remove stored license | 3 | `studio-unlock` |
 | Hear chord patterns, then name or sing the next note. | 10 | `choose-or-sing` |
-| Play chord pattern | 3 | Result-naming action. |
-| Replay chord pattern | 3 | Result-naming action. |
-| Open next question | 3 | Result-naming action. |
-| Back up JSON | 3 | Result-naming action. |
 
 ## Sample practice
 
 | Copy | Words | Claim or result |
 | --- | ---: | --- |
 | Demo — sample data, nothing is saved | 7 | `demo-isolation` |
-| Open your practice | 3 | Result-naming action. |
+| Reset demo | 2 | Reseeds sample state. |
+| Open your practice | 3 | Result-naming exit action. |
 | Sample progress is discarded; saved progress is unchanged. | 8 | `demo-isolation` |
-| Sample practice | 2 | One consistent page name. |
+| Sample practice | 2 | One consistent destination name. |
+
+## Privacy and terms
+
+| Copy | Words | Claim or result |
+| --- | ---: | --- |
+| Practice history, settings, and any Studio license are stored in your browser's local storage. | 14 | `local-data-control`, `studio-unlock` |
+| Microphone audio is analysed live on your device and is never recorded, uploaded, or retained. | 15 | `private-audio` |
+| Core practice works without an account. | 6 | `no-account` |
+| Studio checkout opens on Sociobot. | 5 | `billing-contract` |
+| When you verify Studio, your browser sends its license token to Sociobot. | 12 | `studio-unlock` |
+| This site loads no behavioural analytics, ads, or third-party scripts. | 10 | `no-third-party-runtime` |
+| Use Erase local progress in Practice to remove training history. | 10 | `local-data-control` |
+| Use Remove stored license to remove the Studio license on this browser. | 12 | `studio-unlock` |
+| CSV export works without Studio. | 5 | `core-free` |
+| Studio is a $24 one-time purchase. | 7 | `billing-contract`, `studio-unlock` |
+| It adds Clarity and Reed textures plus a downloadable progress backup. | 10 | `studio-unlock` |
+| Invalid or revoked licenses do not unlock Studio. | 8 | `studio-unlock` |
+| Paste an active Studio license to restore Studio on this browser. | 11 | `studio-unlock` |
+
+The hearing-safety and educational-result sentences are advice and a disclaimer,
+not product capability claims. The contact link is checked by the route crawl.
 
 ## README sentences
 
@@ -61,20 +91,13 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | The banner offers Reset demo and Open your practice. | 9 | `demo-isolation` |
 | Sample progress is separate from normal progress. | 7 | `demo-isolation` |
 | Leaving the demo discards the sample and keeps normal progress unchanged. | 11 | `demo-isolation` |
-| Explore mode previews choices without scoring them. | 7 | `explore-unscored`, `explore-choice-preview` |
-| The tested product promises and their commands are in `.factory/claims.json`. | 10 | Plain maintainer note. |
-| Sample contents and storage are documented in `.factory/demo.md`. | 8 | Plain maintainer note. |
-| Use Node.js 20 or newer. | 6 | Plain prerequisite. |
-| Start the preview server before the accessibility audit. | 8 | Plain verification instruction. |
-| Run each claim command to verify one product promise at a time. | 11 | Plain verification instruction. |
-| The production build is `dist/`, with `dist/index.html` at its root. | 10 | Build result. |
-| Deploy `dist/` to a static host that applies `staticwebapp.config.json`. | 9 | Deployment instruction. |
+| Explore mode previews choices without scoring them. | 7 | `explore-choice-preview`, `explore-unscored` |
 | Core practice needs no account. | 5 | `no-account` |
 | Practice audio stays in the browser. | 6 | `private-audio` |
-| Core practice and CSV export stay free. | 7 | `core-free` |
-| Studio is an optional $24 one-time purchase. | 7 | `studio-unlock` |
-| It adds two sound textures and a JSON backup. | 9 | `studio-unlock` |
-| Read Privacy and Terms for the user-facing policies. | 8 | Plain navigation instruction. |
+| Core practice and CSV export work without Studio. | 9 | `core-free` |
+| Studio is an optional $24 one-time purchase. | 7 | `billing-contract`, `studio-unlock` |
+| It adds two sound textures and a downloadable progress backup. | 9 | `studio-unlock` |
+| Studio checkout opens on Sociobot. | 5 | `billing-contract` |
 
 ## Terminology
 
@@ -87,3 +110,4 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | scored answer state | Scoring mode |
 | repeated chord audio | chord pattern |
 | difficulty choices | Starter set, Larger set, Full set |
+| paid data file | downloadable progress backup |

@@ -33,10 +33,11 @@ await page.route('**/*', async route => {
 await page.goto(url, { waitUntil: 'networkidle' });
 
 const initialResults = await new AxeBuilder({ page }).analyze();
-await page.getByRole('button', { name: 'Switch color theme' }).click();
+await page.getByRole('button', { name: 'Use dark theme' }).click();
 const darkResults = await new AxeBuilder({ page }).analyze();
 if (await page.locator('html').getAttribute('data-theme') !== 'dark') errors.push('Theme control did not apply the dark treatment.');
-await page.getByRole('button', { name: 'Switch color theme' }).click();
+if (await page.getByRole('button', { name: 'Use light theme' }).count() !== 1) errors.push('Theme control does not name the next visible result.');
+await page.getByRole('button', { name: 'Use light theme' }).click();
 
 // Exercise the state that was previously missed by the initial-route audit.
 const tabs = page.getByRole('tab');
