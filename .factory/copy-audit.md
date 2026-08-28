@@ -1,4 +1,4 @@
-# Copy audit — polish round 4
+# Copy audit — polish round 5
 
 Counts treat hyphenated terms, product names, paths, and shortcut labels as one
 word. No visitor sentence exceeds 22 words. No banned plain-words term remains.
@@ -41,13 +41,20 @@ word. No visitor sentence exceeds 22 words. No banned plain-words term remains.
 | The practice makes short chord patterns in your browser. | 9 | `chord-pattern-practice` |
 | It does not load songs or record your voice. | 9 | `chord-pattern-practice`, `private-audio` |
 | Microphone sound is analysed live and is not retained. | 9 | `private-audio` |
-| Studio adds Clarity and Reed textures plus a downloadable progress backup. | 10 | `studio-unlock` |
+| Studio adds Clarity and Reed textures plus a progress backup you can restore. | 12 | `studio-unlock`, `progress-backup-restore` |
 | Core practice and CSV export work without Studio. | 9 | `core-free` |
 | $24 / one-time purchase | 3 | `billing-contract`, `studio-unlock` |
-| Download progress backup | 3 | Result-naming action. |
+| Open Studio checkout (external) | 4 | `billing-contract`; names the next origin. |
+| Download progress backup | 3 | `studio-unlock` |
+| Restore progress backup | 3 | `progress-backup-restore` |
+| Backup ready: 2 saved records. | 5 | `progress-backup-restore` preview. |
+| Levels: Note roles 2, Progressions 3, Sing it back 1. | 10 | `progress-backup-restore` preview. |
+| Replace local progress | 3 | Confirmed destructive restore action. |
+| This file is not an Ear in Context progress backup. | 10 | Validation error names the fix. |
 | Studio checkout opens on Sociobot. | 5 | `billing-contract` |
 | Remove stored license | 3 | `studio-unlock` |
 | Hear chord patterns, then name or sing the next note. | 10 | `choose-or-sing` |
+| Built by Param Factory (external) | 5 | Off-origin link is disclosed. |
 
 ## Sample practice
 
@@ -73,7 +80,7 @@ word. No visitor sentence exceeds 22 words. No banned plain-words term remains.
 | Use Remove stored license to remove the Studio license on this browser. | 12 | `studio-unlock` |
 | CSV export works without Studio. | 5 | `core-free` |
 | Studio is a $24 one-time purchase. | 7 | `billing-contract`, `studio-unlock` |
-| It adds Clarity and Reed textures plus a downloadable progress backup. | 10 | `studio-unlock` |
+| It adds Clarity and Reed textures plus a progress backup you can restore. | 12 | `studio-unlock`, `progress-backup-restore` |
 | Invalid or revoked licenses do not unlock Studio. | 8 | `studio-unlock` |
 | Paste an active Studio license to restore Studio on this browser. | 11 | `studio-unlock` |
 
@@ -96,7 +103,7 @@ not product capability claims. The contact link is checked by the route crawl.
 | Practice audio stays in the browser. | 6 | `private-audio` |
 | Core practice and CSV export work without Studio. | 9 | `core-free` |
 | Studio is an optional $24 one-time purchase. | 7 | `billing-contract`, `studio-unlock` |
-| It adds two sound textures and a downloadable progress backup. | 9 | `studio-unlock` |
+| It adds two sound textures and a progress backup you can restore. | 11 | `studio-unlock`, `progress-backup-restore` |
 | Studio checkout opens on Sociobot. | 5 | `billing-contract` |
 
 ## Terminology
@@ -110,4 +117,5 @@ not product capability claims. The contact link is checked by the route crawl.
 | scored answer state | Scoring mode |
 | repeated chord audio | chord pattern |
 | difficulty choices | Starter set, Larger set, Full set |
-| paid data file | downloadable progress backup |
+| paid data file | progress backup |
+| off-origin destination | (external) |

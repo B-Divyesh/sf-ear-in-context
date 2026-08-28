@@ -126,6 +126,13 @@
     "sandbox": "Fresh context stores licenses from the return URL and restore form, checks paid textures and backup, intercepts valid and revoked verification responses, and removes the stored license."
   },
   {
+    "id": "progress-backup-restore",
+    "claim": "Studio progress backups can restore every saved record and practice setting on this browser.",
+    "where": "Studio section, data controls, terms, README",
+    "test": "npm run test:claims -- --grep @claim:progress-backup-restore",
+    "sandbox": "Fresh licensed context downloads a seeded versioned backup, erases progress, previews record and setting counts, replaces local progress, compares every restored field, then rejects a malformed file without changing storage."
+  },
+  {
     "id": "billing-contract",
     "claim": "Studio checkout opens on Sociobot for a $24 one-time purchase.",
     "where": "settings, privacy, terms, README",

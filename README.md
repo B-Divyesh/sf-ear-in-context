@@ -44,7 +44,7 @@ Core practice needs no account. Practice audio stays in the browser. Core
 practice and CSV export work without Studio.
 
 Studio is an optional $24 one-time purchase. It adds two sound textures and a
-downloadable progress backup. Studio checkout opens on Sociobot. Read
+progress backup you can restore. Studio checkout opens on Sociobot. Read
 [/privacy](https://ear-in-context.sociobot.in/privacy) and
 [/terms](https://ear-in-context.sociobot.in/terms) for the user-facing policies.
 

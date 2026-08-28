@@ -3,7 +3,7 @@ import { closeAudio, playNote, playSequence } from './audio';
 import { exercisesByModule, frequencyToMidi, midiName, type Exercise, type ModuleId, type TextureId } from './music';
 import { startPitchMonitor, type PitchMonitor } from './pitch';
 import { chooseExercise, nextLevel, schedule, type ProgressState } from './scheduler';
-import { clearProgress, discardDemoProgress, exportCsv, loadProgress, resetDemoProgress, saveProgress, useDemoStorage } from './storage';
+import { clearProgress, discardDemoProgress, exportCsv, exportProgressBackup, loadProgress, parseProgressBackup, resetDemoProgress, saveProgress, useDemoStorage, type RestorableBackup } from './storage';
 import { captureLicenseFromUrl, checkoutUrl, hasOptimisticUnlock, hasStoredLicense, removeLicense, storeLicense, verifyLicense } from './license';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -28,6 +28,8 @@ const capturedLicense = isDemo ? false : captureLicenseFromUrl();
 let studioUnlocked = isDemo ? false : hasOptimisticUnlock();
 let licenseNotice = capturedLicense ? 'Studio license saved. Welcome.' : '';
 let online = navigator.onLine;
+let pendingBackup: RestorableBackup | null = null;
+let backupNotice = '';
 
 const today = new Date().toISOString().slice(0, 10);
 if (progress.lastVisit !== today) {
@@ -257,6 +259,15 @@ function accuracy(): number {
   return progress.answered ? Math.round((progress.correct / progress.answered) * 100) : 0;
 }
 
+function backupPreview(): string {
+  if (!pendingBackup) return backupNotice;
+  const restored = pendingBackup.progress;
+  const record = pendingBackup.recordCount === 1 ? 'record' : 'records';
+  const mode = restored.sandbox ? 'Explore mode' : 'Scoring mode';
+  const levelChange = restored.holdLevel ? 'Keep current level' : 'Automatic level changes';
+  return `<p>Backup ready: ${pendingBackup.recordCount} saved ${record}.</p><p>Levels: Note roles ${restored.level.intervals}, Progressions ${restored.level.progressions}, Sing it back ${restored.level.sing}. ${mode}; ${levelChange}; ${restored.texture} sound.</p><div class="button-row"><button data-action="confirm-restore" class="primary">Replace local progress</button><button data-action="cancel-restore">Cancel restore</button></div>`;
+}
+
 function renderHeader(): string {
   const themeAction = document.documentElement.dataset.theme === 'dark' ? 'Use light theme' : 'Use dark theme';
   return `<header class="site-header">
@@ -265,13 +276,13 @@ function renderHeader(): string {
       <a href="/" data-nav="/">Practice</a>
       <a href="/demo" data-nav="/demo">Demo</a>
       <a href="/privacy" data-nav="/privacy">Privacy</a>
-      <button class="theme-button" data-action="theme" type="button" aria-label="${themeAction}"><span aria-hidden="true">◐</span><span class="theme-label">${themeAction}</span></button>
     </nav>
+    <button class="theme-button" data-action="theme" type="button" aria-label="${themeAction}"><span aria-hidden="true">◐</span><span class="theme-label">${themeAction}</span></button>
   </header>`;
 }
 
 function renderFooter(): string {
-  return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory</a> · v1.2.0</p></footer>`;
+  return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory (external)</a> · v1.2.0</p></footer>`;
 }
 
 function practiceControls(): string {
@@ -286,7 +297,7 @@ function practiceControls(): string {
 function renderPolicy(kind: 'privacy' | 'terms'): void {
   const privacy = kind === 'privacy';
   app.innerHTML = `${renderHeader()}<main id="main" class="policy"><p class="eyebrow">Plain-language ${privacy ? 'privacy' : 'terms'}</p><h1 tabindex="-1">${privacy ? 'Privacy for your ear practice' : 'Terms for ear practice'}</h1>
-    ${privacy ? `<h2>What is stored</h2><p>Practice history, settings, and any Studio license are stored in your browser's local storage. Microphone audio is analysed live on your device and is never recorded, uploaded, or retained.</p><h2>Network requests</h2><p>Core practice works without an account. Studio checkout opens on Sociobot. When you verify Studio, your browser sends its license token to Sociobot. This site loads no behavioural analytics, ads, or third-party scripts.</p><h2>Your control</h2><p>Use “Erase local progress” in Practice to remove training history. Use “Remove stored license” to remove the Studio license on this browser. CSV export works without Studio.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 28 August 2026.</p>` : `<h2>Using the trainer</h2><p>Ear in Context is an educational practice aid. It does not promise a specific musical result. Keep device volume comfortable.</p><h2>Studio purchase</h2><p>Studio is a $24 one-time purchase. It adds Clarity and Reed textures plus a downloadable progress backup. Core practice and CSV export work without Studio. Studio checkout opens on Sociobot.</p><h2>Studio license</h2><p>Paste an active Studio license to restore Studio on this browser. Invalid or revoked licenses do not unlock Studio. Remove the stored license whenever you need to.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 28 August 2026.</p>`}
+    ${privacy ? `<h2>What is stored</h2><p>Practice history, settings, and any Studio license are stored in your browser's local storage. Microphone audio is analysed live on your device and is never recorded, uploaded, or retained.</p><h2>Network requests</h2><p>Core practice works without an account. Studio checkout opens on Sociobot. When you verify Studio, your browser sends its license token to Sociobot. This site loads no behavioural analytics, ads, or third-party scripts.</p><h2>Your control</h2><p>Use “Erase local progress” in Practice to remove training history. Use “Remove stored license” to remove the Studio license on this browser. CSV export works without Studio.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in (external)</a>. Effective 28 August 2026.</p>` : `<h2>Using the trainer</h2><p>Ear in Context is an educational practice aid. It does not promise a specific musical result. Keep device volume comfortable.</p><h2>Studio purchase</h2><p>Studio is a $24 one-time purchase. It adds Clarity and Reed textures plus a progress backup you can restore. Core practice and CSV export work without Studio. Studio checkout opens on Sociobot.</p><h2>Studio license</h2><p>Paste an active Studio license to restore Studio on this browser. Invalid or revoked licenses do not unlock Studio. Remove the stored license whenever you need to.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in (external)</a>. Effective 28 August 2026.</p>`}
     <a class="button-link" href="/" data-nav="/">Return to practice</a></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
   bindCommon();
 }
@@ -348,10 +359,10 @@ function render(): void {
       </div>
       <div id="practice-panel" role="tabpanel" tabindex="0" aria-labelledby="module-tab-${moduleId}"></div>
     </section>
-    ${!isDemo ? `<section class="how-it-works" aria-labelledby="how-title"><p class="eyebrow">Three ways to practice</p><h2 id="how-title">Listen, choose, then sing</h2><ol><li><strong>Play a chord pattern.</strong><span>Hear where the home chord settles.</span></li><li><strong>Name the next note.</strong><span>Use Note roles or compare Progressions.</span></li><li><strong>Sing it back.</strong><span>See one sung pitch on the two-octave keyboard.</span></li></ol></section><section class="boundaries" aria-labelledby="boundaries-title"><div><p class="eyebrow">Clear boundaries</p><h2 id="boundaries-title">Generated patterns, not song recordings</h2></div><p>The practice makes short chord patterns in your browser. It does not load songs or record your voice. Microphone sound is analysed live and is not retained.</p></section><section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a downloadable progress backup. Core practice and CSV export work without Studio.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Buy Studio</a>`}</div></section>` : ''}
+    ${!isDemo ? `<section class="how-it-works" aria-labelledby="how-title"><p class="eyebrow">Three ways to practice</p><h2 id="how-title">Listen, choose, then sing</h2><ol><li><strong>Play a chord pattern.</strong><span>Hear where the home chord settles.</span></li><li><strong>Name the next note.</strong><span>Use Note roles or compare Progressions.</span></li><li><strong>Sing it back.</strong><span>See one sung pitch on the two-octave keyboard.</span></li></ol></section><section class="boundaries" aria-labelledby="boundaries-title"><div><p class="eyebrow">Clear boundaries</p><h2 id="boundaries-title">Generated patterns, not song recordings</h2></div><p>The practice makes short chord patterns in your browser. It does not load songs or record your voice. Microphone sound is analysed live and is not retained.</p></section><section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a progress backup you can restore. Core practice and CSV export work without Studio.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Open Studio checkout (external)</a>`}</div></section>` : ''}
     <section class="settings" aria-labelledby="settings-title"><details><summary id="settings-title">Progress, sound & license</summary><div class="settings-grid">
       <div><h3>Sound texture</h3><div class="texture-options"><button data-texture="warm" aria-label="Warm texture, free" aria-pressed="${texture() === 'warm'}">Warm <small>Free</small></button><button data-texture="clarity" aria-label="Clarity texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'clarity'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Clarity <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button><button data-texture="reed" aria-label="Reed texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'reed'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Reed <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button></div></div>
-      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have scored answers.` : 'No scored answers yet. Turn off Explore mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Download progress backup" data-action="backup">Download progress backup</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
+      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have scored answers.` : 'No scored answers yet. Turn off Explore mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Download progress backup" data-action="backup">Download progress backup</button><button aria-label="Restore progress backup" data-action="restore-backup">Restore progress backup</button><input id="backup-file" data-action="backup-file" type="file" accept="application/json,.json" hidden>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div>${studioUnlocked ? `<div id="backup-status" class="backup-status" role="status" aria-live="polite" tabindex="-1">${backupPreview()}</div>` : ''}</div>
       <form id="license-form"><h3>Restore Studio</h3><label for="license-token">Have a license? Paste it here.</label><input id="license-token" name="license" autocomplete="off" spellcheck="false" required><button aria-label="Verify Studio license" type="submit">Verify license</button>${hasStoredLicense() ? '<button type="button" data-action="remove-license">Remove stored license</button>' : ''}<p id="license-status" role="status" tabindex="-1">${licenseNotice}</p><p class="fine">Studio checkout opens on Sociobot. <a href="/terms" data-nav="/terms">Read the terms</a>.</p></form>
     </div></details></section>
   </main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
@@ -433,7 +444,46 @@ function bindPracticeShell(): void {
     void playNote(60, texture());
   }));
   document.querySelector<HTMLButtonElement>('[data-action="export"]')?.addEventListener('click', () => download('ear-in-context-progress.csv', exportCsv(progress), 'text/csv'));
-  document.querySelector<HTMLButtonElement>('[data-action="backup"]')?.addEventListener('click', () => download('ear-in-context-backup.json', JSON.stringify(progress, null, 2), 'application/json'));
+  document.querySelector<HTMLButtonElement>('[data-action="backup"]')?.addEventListener('click', () => download('ear-in-context-backup.json', exportProgressBackup(progress), 'application/json'));
+  document.querySelector<HTMLButtonElement>('[data-action="restore-backup"]')?.addEventListener('click', () => {
+    document.querySelector<HTMLInputElement>('#backup-file')?.click();
+  });
+  document.querySelector<HTMLInputElement>('[data-action="backup-file"]')?.addEventListener('change', async event => {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      pendingBackup = parseProgressBackup(await file.text());
+      backupNotice = '';
+    } catch (error) {
+      pendingBackup = null;
+      backupNotice = error instanceof Error ? `${error.message} Local progress was not changed.` : 'This backup could not be read. Local progress was not changed.';
+    }
+    render();
+    const details = document.querySelector<HTMLDetailsElement>('.settings details');
+    if (details) details.open = true;
+    document.querySelector<HTMLElement>('#backup-status')?.focus();
+  });
+  document.querySelector<HTMLButtonElement>('[data-action="confirm-restore"]')?.addEventListener('click', () => {
+    if (!pendingBackup) return;
+    progress = pendingBackup.progress;
+    pendingBackup = null;
+    backupNotice = 'Progress backup restored.';
+    answer = null;
+    exercise = chooseExercise(exercisesByModule[moduleId], progress, moduleId);
+    save();
+    render();
+    const details = document.querySelector<HTMLDetailsElement>('.settings details');
+    if (details) details.open = true;
+    document.querySelector<HTMLElement>('#backup-status')?.focus();
+  });
+  document.querySelector<HTMLButtonElement>('[data-action="cancel-restore"]')?.addEventListener('click', () => {
+    pendingBackup = null;
+    backupNotice = 'Restore cancelled. Local progress was not changed.';
+    render();
+    const details = document.querySelector<HTMLDetailsElement>('.settings details');
+    if (details) details.open = true;
+    document.querySelector<HTMLElement>('#backup-status')?.focus();
+  });
   document.querySelector<HTMLButtonElement>('[data-action="erase"]')?.addEventListener('click', () => {
     if (!confirm('Erase all practice history and settings on this device? Your Studio license will be kept.')) return;
     clearProgress(); progress = loadProgress(); setExercise(); render();

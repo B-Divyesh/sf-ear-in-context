@@ -546,6 +546,64 @@ const tests = [
     },
   },
   {
+    id: 'progress-backup-restore',
+    async run(browser) {
+      const { context, page } = await fresh(browser);
+      await page.route('https://api.sociobot.in/api/v1/products/ear-in-context/verify?**', async route => {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, reason: 'ok' }) });
+      });
+      await page.goto(`${base}/?license=backup-license`);
+      await page.waitForURL(`${base}/`);
+      const seeded = await page.evaluate(() => ({
+        reviews: {
+          'degree-1': { attempts: 3, correct: 2, ease: 2.46, intervalDays: 2, dueAt: 1_800_000_000_000 },
+          'progression-1': { attempts: 2, correct: 1, ease: 2.1, intervalDays: 0, dueAt: 1_800_000_100_000 },
+        },
+        level: { intervals: 2, progressions: 3, sing: 1 },
+        holdLevel: true,
+        sandbox: false,
+        sessions: 8,
+        answered: 5,
+        correct: 3,
+        lastVisit: new Date().toISOString().slice(0, 10),
+        texture: 'clarity',
+      }));
+      await page.evaluate(value => localStorage.setItem('ear-in-context:progress:v1', JSON.stringify(value)), seeded);
+      await page.reload();
+      await page.getByText('Studio unlocked').waitFor();
+      await page.getByText('Progress, sound & license').click();
+      const downloadEvent = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Download progress backup' }).click();
+      const downloaded = await downloadEvent;
+      assert((await downloaded).suggestedFilename() === 'ear-in-context-backup.json', 'backup download has the wrong filename');
+      const backupStream = await downloaded.createReadStream();
+      const chunks = [];
+      for await (const chunk of backupStream) chunks.push(Buffer.from(chunk));
+      const backupFile = Buffer.concat(chunks);
+      const envelope = JSON.parse(backupFile.toString('utf8'));
+      assert(envelope.format === 'ear-in-context-progress' && envelope.version === 1, 'backup download is not versioned');
+      assert(JSON.stringify(envelope.progress) === JSON.stringify(seeded), 'backup download did not contain every saved record and setting');
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: 'Erase local progress' }).click();
+      assert(await page.evaluate(() => localStorage.getItem('ear-in-context:progress:v1')) === null, 'test setup did not clear local progress');
+      await page.getByText('Progress, sound & license').click();
+      assert(await page.getByRole('button', { name: 'Restore progress backup' }).count() === 1, 'restore action is missing');
+      await page.locator('#backup-file').setInputFiles({ name: 'ear-in-context-backup.json', mimeType: 'application/json', buffer: backupFile });
+      await page.getByText('Backup ready: 2 saved records.').waitFor();
+      await page.getByText('Levels: Note roles 2, Progressions 3, Sing it back 1. Scoring mode; Keep current level; clarity sound.').waitFor();
+      await page.getByRole('button', { name: 'Replace local progress' }).click();
+      await page.getByText('Progress backup restored.').waitFor();
+      const restored = await page.evaluate(() => JSON.parse(localStorage.getItem('ear-in-context:progress:v1') ?? '{}'));
+      assert(JSON.stringify(restored) === JSON.stringify(seeded), 'restored progress did not match the downloaded records and settings');
+      const beforeInvalid = JSON.stringify(restored);
+      await page.locator('#backup-file').setInputFiles({ name: 'wrong-backup.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"wrong"}') });
+      await page.getByText('This file is not an Ear in Context progress backup. Local progress was not changed.').waitFor();
+      assert(await page.evaluate(() => localStorage.getItem('ear-in-context:progress:v1')) === beforeInvalid, 'invalid backup changed local progress');
+      await shot(page, 'progress-backup-restore');
+      await context.close();
+    },
+  },
+  {
     id: 'billing-contract',
     async run(browser) {
       const { context, page } = await fresh(browser);
@@ -607,7 +665,11 @@ const tests = [
 async function browserChecks(browser) {
   const { context, page } = await fresh(browser);
   const errors = [];
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('console', message => {
+    const expectedNotFoundNavigation = new URL(page.url()).pathname === '/not-a-real-page'
+      && message.text().startsWith('Failed to load resource: the server responded with a status of 404');
+    if (message.type() === 'error' && !expectedNotFoundNavigation) errors.push(message.text());
+  });
   const unknown = await page.goto(`${base}/not-a-real-page`);
   assert(unknown?.status() === 404, `unknown route returned HTTP ${unknown?.status()}`);
   assert(await page.title() === 'Page not found — Ear in Context', 'unknown route did not set a 404 title');
@@ -640,6 +702,13 @@ async function browserChecks(browser) {
   const firstScreen = await page.getByRole('heading', { name: 'Practice hearing harmony in chord patterns' }).isVisible()
     && await page.getByRole('link', { name: 'Try sample practice' }).isVisible();
   assert(firstScreen, 'mobile first screen does not show the job and sample action');
+  const mobilePrivacy = page.locator('.site-header').getByRole('link', { name: 'Privacy', exact: true });
+  assert(await mobilePrivacy.isVisible(), 'Privacy is not visible in the 390 px header');
+  const privacyTarget = await mobilePrivacy.evaluate(link => {
+    const rect = link.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+  assert(privacyTarget.width >= 44 && privacyTarget.height >= 44, `mobile Privacy target is too small: ${JSON.stringify(privacyTarget)}`);
   await page.getByRole('button', { name: 'Use dark theme' }).click();
   assert(await page.locator('html').getAttribute('data-theme') === 'dark', 'theme control did not apply dark mode');
   assert(await page.getByRole('button', { name: 'Use light theme' }).count() === 1, 'theme control did not name the next visible result');
@@ -652,6 +721,16 @@ async function browserChecks(browser) {
     })
     .filter(target => target.width < 44 || target.height < 44));
   assert(smallTargets.length === 0, `touch targets below 44px: ${JSON.stringify(smallTargets)}`);
+  const externalLinkProblems = [];
+  for (const path of ['/', '/privacy', '/terms', '/not-a-real-page']) {
+    await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
+    const problems = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
+      .filter(link => new URL(link.href).origin !== location.origin)
+      .map(link => ({ href: link.href, name: link.getAttribute('aria-label') ?? link.textContent?.replace(/\s+/g, ' ').trim() ?? '' }))
+      .filter(link => !/external/i.test(link.name)));
+    externalLinkProblems.push(...problems.map(problem => ({ path, ...problem })));
+  }
+  assert(externalLinkProblems.length === 0, `off-origin links need external wording: ${JSON.stringify(externalLinkProblems)}`);
   assert(errors.length === 0, `console errors: ${errors.join(' | ')}`);
   await page.screenshot({ path: browserScreenshot, fullPage: true });
   await context.close();
