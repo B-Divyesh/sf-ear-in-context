@@ -45,10 +45,12 @@ CSS (4.70 kB gzip), and the existing 38 kB WebP hero; all are within budget.
 ## Deploy and known gaps
 
 `dist/` remains the static Azure Static Web Apps artifact and
-`public/staticwebapp.config.json` is shipped to its root. No separate deploy
-script or infrastructure credential is present in this repository; the repair
-is ready for the work-order deployment triggered by the main-branch push.
+`public/staticwebapp.config.json` is shipped to its root. Commits
+`2e74480` and `aae1a6c` were pushed to `origin/main` on 2026-08-28 UTC. No
+separate deploy script or infrastructure credential is present in this
+repository. A live check immediately after the push still returned the prior
+title, so the external Azure deployment has not yet picked up the new commit.
 
-No known blocking product findings remain. A live-host HTTP status check for
-the host's 404 override should follow deployment, because Vite preview only
-exercises the client-side designed 404 route.
+No known blocking product findings remain in the committed artifact. Once the
+external deployment updates, verify the live title and the host's 404 override;
+Vite preview only exercises the client-side designed 404 route.
