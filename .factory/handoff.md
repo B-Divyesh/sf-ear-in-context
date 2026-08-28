@@ -1,58 +1,54 @@
-# Verification handoff — Ear in Context
+# Repair handoff — Ear in Context
 
-## PASS
+## Release repair
 
-Independent verification on 2026-08-27 UTC passed for candidate
-`8700a2cab51d4cba0c98ccf9e60ea5211e32ff88` and the deployed site
-https://ear-in-context.sociobot.in/.
+Repair commit: `2e744807d2116d79de6a26af46546f1ba0171726` (based on reviewed
+commit `415fb3b33f906107c8d0656a37639a83636eeea5`).
 
-The deployment is this exact candidate: HTML, hashed CSS/JS, hero image,
-service worker, and manifest all matched SHA-256. No product defects were
-found at any severity.
+The release now has an isolated `/demo` and `?demo=1` sample path. It shows a
+persistent **Demo — sample data, nothing is saved** banner, **Reset demo**, and
+**Start for real**. Demo progress is seeded and uses only
+`demo:ear-in-context:progress:v1`; normal progress remains untouched.
 
-## How verified
+The first screen now names the job and audience, with a visible **Try sample
+practice** action and an adjacent explanation. The paper-and-voice-path
+identity is retained. The repair also adds route-specific metadata, canonical,
+Open Graph/Twitter art, touch icon, sitemap, consistent Demo navigation,
+product-styled 404, route title announcements and heading focus, legal links,
+mobile navigation/layout changes, and a concise catalog description.
 
-```bash
-npm ci
-npm test
-npm run build
-npm run preview -- --host 127.0.0.1
-npm run audit:a11y
-AUDIT_URL=https://ear-in-context.sociobot.in/ npm run audit:a11y
+## Claims and demo evidence
+
+`.factory/claims.json` contains executable tests for demo isolation, local
+audio traffic, account-free sample entry, CSV export, Studio price/backup, and
+offline reload. `scripts/claims.mjs` runs each in fresh Playwright contexts;
+`test:browser` additionally checks 404, history focus, mobile overflow, and
+console errors. Demo documentation is in `.factory/demo.md`.
+
+## Verified from a clean clone
+
+Clean clone: `/tmp/tmp.r1IstdtWWU` from repair commit above, then `npm ci`.
+
+```text
+npm test                         PASS — 3 files, 8 tests
+npm run build                    PASS — dist/index.html produced
+npm run test:browser             PASS — all six @claim tests, routing/focus/mobile/console
+npm run audit:a11y               PASS — 0 serious/critical axe findings, 0 console errors
 ```
 
-Results: 8/8 unit tests passed, strict TypeScript/Vite production build passed,
-local and live axe scans had zero serious/critical issues and zero browser
-errors. Desktop, 390px mobile, keyboard-only flow, sandbox/hold controls,
-microphone-denial recovery, corrupt local storage recovery, invalid-license
-recovery, offline reload, security headers, outbound requests, and bundle
-budgets were independently exercised. Live HSTS is preload eligible; CSP is
-strict and allows only same-origin assets plus the Sociobot license API.
+Browser evidence included the demo storage comparison against a seeded real
+key, same-origin request interception while playing the sample, CSV header plus
+two sample rows, service-worker controlled offline reload, and a 390×844
+viewport check. The production build is 32.32 kB JS (11.73 kB gzip), 18.25 kB
+CSS (4.70 kB gzip), and the existing 38 kB WebP hero; all are within budget.
 
-Initial JS is 28,086 B (10.72 kB gzip), CSS 16,444 B (4.29 kB gzip), and the
-WebP hero 38,416 B. Full evidence, hashes, test inputs, and the one
-environmental Lighthouse limitation are in `.factory/verification-3.md`.
+## Deploy and known gaps
 
-## Known gaps / next steps
+`dist/` remains the static Azure Static Web Apps artifact and
+`public/staticwebapp.config.json` is shipped to its root. No separate deploy
+script or infrastructure credential is present in this repository; the repair
+is ready for the work-order deployment triggered by the main-branch push.
 
-No product follow-up is required. A standalone Lighthouse CLI score was not
-available because Chrome crashes in this verifier container; installed
-Playwright Chromium completed the browser, axe, PWA, console, and performance
-budget checks.
-
-## Review 1 — 2026-08-28
-
-Performed the requested adversarial first-read review without changing product
-code. The report is `.factory/review-1.md`.
-
-Fresh live checks at 390 px and desktop, a clean-clone `npm ci && npm test &&
-npm run build`, local production-preview checks, Axe, storage-isolation
-checks, and live route/link checks were run. The review result is **FAIL**:
-the required isolated sample-data demo and claims registry/tests are absent;
-the first screen omits its audience and uses unexplained theory terms; and an
-unknown URL displays the practice page rather than a designed 404. The report
-also records metadata, focus-routing, sitemap, copy, and shared-skeleton
-findings.
-
-No product files were modified. This handoff section and the review are the
-only review artifacts added.
+No known blocking product findings remain. A live-host HTTP status check for
+the host's 404 override should follow deployment, because Vite preview only
+exercises the client-side designed 404 route.
