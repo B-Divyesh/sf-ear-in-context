@@ -35,7 +35,7 @@ against the deployed production artifact.
 
 ## Cross-cutting evidence
 
-- Clean clone `/tmp/eic-polish-3-clean.l9KKxe`: `npm ci`, `npm test`, `npm run
+- Clean clone `/tmp/eic-polish-3-final.DoURRT`: `npm ci`, `npm test`, `npm run
   build`, every registry command individually, aggregate browser suite,
   `npm audit --omit=dev`, and `npm run audit:a11y` all passed.
 - Live deployment: URL verifier, 19/19 claim tests, route/crawl/focus/mobile

@@ -33,7 +33,8 @@ result wording and named difficulty sets.
 
 ## Exact verification evidence
 
-Fresh clone: `/tmp/eic-polish-3-clean.l9KKxe`, cloned after the repair commit.
+Fresh clone: `/tmp/eic-polish-3-final.DoURRT`, cloned from pushed commit
+`7ab29aaf2ef52cbde52d56ab1e40134588cf5c4b`.
 
 ```text
 npm ci                                      PASS — 58 packages; 0 vulnerabilities
@@ -47,7 +48,7 @@ npm run audit:a11y                           PASS — 0 serious/critical; 0 cons
 
 The clean-clone command log has 38 `PASS @claim:` lines: the 19 individually
 run claims plus the same 19 in the aggregate browser suite. The full log is
-`/tmp/eic-polish-3-clean.l9KKxe/clean-claim-run.log`.
+`/tmp/eic-polish-3-final.DoURRT/final-clean-claims.log`.
 
 Live checks after deployment:
 
