@@ -3,11 +3,14 @@ import { mkdir } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from 'playwright';
 
-const base = 'http://127.0.0.1:4174';
+const liveBase = process.env.LIVE_URL?.replace(/\/$/, '');
+const base = liveBase ?? 'http://127.0.0.1:4174';
 const grepIndex = process.argv.indexOf('--grep');
 const filter = grepIndex >= 0 ? process.argv[grepIndex + 1] : '';
-const useAzureEmulator = !filter;
-const server = useAzureEmulator
+const useAzureEmulator = !filter && !liveBase;
+const server = liveBase
+  ? null
+  : useAzureEmulator
   ? spawn('swa', ['start', 'dist', '--host', '127.0.0.1', '--port', '4174'], { stdio: ['ignore', 'pipe', 'pipe'] })
   : spawn('./node_modules/.bin/vite', ['preview', '--host', '127.0.0.1', '--port', '4174', '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'] });
 
@@ -430,5 +433,5 @@ try {
   if (!filter) { await browserChecks(browser); console.log('PASS browser HTTP routing, metadata, focus, mobile, crawl, and console checks'); }
   await browser.close();
 } finally {
-  server.kill('SIGTERM');
+  server?.kill('SIGTERM');
 }

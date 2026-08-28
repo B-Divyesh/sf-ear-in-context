@@ -10,7 +10,11 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const page = await context.newPage();
 const errors = [];
-page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+page.on('console', message => {
+  const expectedNotFoundNavigation = new URL(page.url()).pathname === '/not-a-real-page'
+    && message.text().startsWith('Failed to load resource: the server responded with a status of 404');
+  if (message.type() === 'error' && !expectedNotFoundNavigation) errors.push(message.text());
+});
 page.on('pageerror', error => errors.push(String(error)));
 if (csp !== "default-src 'self'; connect-src 'self' https://api.sociobot.in; img-src 'self'; media-src 'self' blob:; style-src 'self'; script-src 'self'; worker-src 'self';") {
   errors.push('Unexpected production CSP; the audit must exercise the deployed strict policy.');

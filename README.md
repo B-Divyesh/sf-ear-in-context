@@ -29,6 +29,7 @@ npm test
 npm run build
 npm run test:browser
 npm run audit:a11y
+LIVE_URL=https://ear-in-context.sociobot.in npm run test:live
 ```
 
 Start `npm run preview -- --host 127.0.0.1` before `npm run audit:a11y`. Run
