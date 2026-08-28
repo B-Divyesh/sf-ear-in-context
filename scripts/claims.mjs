@@ -7,14 +7,17 @@ const liveBase = process.env.LIVE_URL?.replace(/\/$/, '');
 const base = liveBase ?? 'http://127.0.0.1:4174';
 const grepIndex = process.argv.indexOf('--grep');
 const filter = grepIndex >= 0 ? process.argv[grepIndex + 1] : '';
+const screenshotDir = process.env.CLAIM_EVIDENCE_DIR ?? 'test-results/claims';
+const browserScreenshot = process.env.BROWSER_EVIDENCE_PATH ?? 'test-results/browser-mobile.png';
 const useAzureEmulator = !filter && !liveBase;
+const serverOptions = { stdio: 'ignore', detached: process.platform !== 'win32' };
 const server = liveBase
   ? null
   : useAzureEmulator
-  ? spawn('swa', ['start', 'dist', '--host', '127.0.0.1', '--port', '4174'], { stdio: ['ignore', 'pipe', 'pipe'] })
-  : spawn('./node_modules/.bin/vite', ['preview', '--host', '127.0.0.1', '--port', '4174', '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  ? spawn('swa', ['start', 'dist', '--host', '127.0.0.1', '--port', '4174'], serverOptions)
+  : spawn('./node_modules/.bin/vite', ['preview', '--host', '127.0.0.1', '--port', '4174', '--strictPort'], serverOptions);
 
-await mkdir('test-results/claims', { recursive: true });
+await mkdir(screenshotDir, { recursive: true });
 
 async function ready() {
   for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -49,7 +52,7 @@ async function instrumentAudio(page) {
 }
 
 async function shot(page, id) {
-  await page.screenshot({ path: `test-results/claims/${id}.png`, fullPage: false });
+  await page.screenshot({ path: `${screenshotDir}/${id}.png`, fullPage: false });
 }
 
 async function storageState(page) {
@@ -57,6 +60,73 @@ async function storageState(page) {
     real: localStorage.getItem('ear-in-context:progress:v1'),
     demo: localStorage.getItem('demo:ear-in-context:progress:v1'),
   }));
+}
+
+async function openPracticeSettings(page) {
+  const setup = page.locator('.demo-setup');
+  if (await setup.count() && !(await setup.evaluate(element => element.hasAttribute('open')))) {
+    await setup.locator('summary').click();
+  }
+}
+
+async function persistentAudioState(page) {
+  return page.evaluate(async () => {
+    const localStorageState = Object.fromEntries(Object.keys(localStorage).sort().map(key => [key, localStorage.getItem(key)]));
+    const indexedDb = typeof indexedDB.databases === 'function'
+      ? (await indexedDB.databases()).map(({ name, version }) => ({ name: name ?? '', version: version ?? 0 })).sort((a, b) => a.name.localeCompare(b.name))
+      : [];
+    const cacheNames = typeof caches === 'undefined' ? [] : (await caches.keys()).sort();
+    return { localStorageState, indexedDb, cacheNames };
+  });
+}
+
+async function instrumentPrivacy(page) {
+  await page.evaluate(() => {
+    const probe = { blobCalls: 0, mediaRecorderCalls: 0, objectUrlCalls: 0, tracks: [] };
+    window.__privacyProbe = probe;
+    const NativeBlob = window.Blob;
+    class GuardedBlob extends NativeBlob {
+      constructor(parts, options) {
+        probe.blobCalls += 1;
+        throw new Error('Microphone flow must not create an audio Blob.');
+      }
+    }
+    window.Blob = GuardedBlob;
+    const NativeMediaRecorder = window.MediaRecorder;
+    if (NativeMediaRecorder) {
+      window.MediaRecorder = class GuardedMediaRecorder {
+        constructor() {
+          probe.mediaRecorderCalls += 1;
+          throw new Error('Microphone flow must not create a MediaRecorder.');
+        }
+      };
+    }
+    const createObjectUrl = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = object => {
+      probe.objectUrlCalls += 1;
+      return createObjectUrl(object);
+    };
+    const actualGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    window.__testRealGetUserMedia = actualGetUserMedia;
+  });
+}
+
+async function installSyntheticC4Microphone(page) {
+  await page.evaluate(async () => {
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 261.625565;
+    const gain = context.createGain();
+    gain.gain.value = 0.35;
+    const destination = context.createMediaStreamDestination();
+    oscillator.connect(gain).connect(destination);
+    oscillator.start();
+    await context.resume();
+    const track = destination.stream.getAudioTracks()[0];
+    window.__syntheticPitch = { context, oscillator, track };
+    navigator.mediaDevices.getUserMedia = async () => destination.stream;
+  });
 }
 
 const tests = [
@@ -70,12 +140,13 @@ const tests = [
       await page.goto(`${base}/?demo=1`);
       await page.getByText('Demo — sample data, nothing is saved').waitFor();
       assert(await page.getByText(/3 answered/).count() === 1, 'sample progress was not seeded');
+      await openPracticeSettings(page);
       await page.getByLabel(/Explore mode/).uncheck();
       await page.locator('[data-choice]').first().click();
       assert((await storageState(page)).real === real, 'demo answer changed real progress');
       await page.getByRole('button', { name: 'Reset demo' }).click();
       assert(await page.getByText(/3 answered/).count() === 1, 'Reset demo did not restore sample progress');
-      await page.getByRole('button', { name: 'Leave demo and open your practice' }).click();
+      await page.getByRole('button', { name: 'Open your practice' }).click();
       const state = await storageState(page);
       assert(state.real === real, 'leaving demo changed real progress');
       assert(state.demo === null, 'leaving demo did not discard demo progress');
@@ -85,12 +156,32 @@ const tests = [
     },
   },
   {
+    id: 'demo-first-screen',
+    async run(browser) {
+      const { context, page } = await fresh(browser);
+      await page.goto(`${base}/`);
+      await page.getByRole('link', { name: 'Try sample practice' }).click();
+      await page.waitForURL(`${base}/demo`);
+      const bounds = await page.evaluate(() => {
+        const selectors = ['.voice-map', '[data-action="play"]', '#exercise-title', '[data-choice]'];
+        return selectors.map(selector => {
+          const element = document.querySelector(selector);
+          const rect = element?.getBoundingClientRect();
+          return { selector, top: rect?.top ?? -1, bottom: rect?.bottom ?? Number.POSITIVE_INFINITY, viewport: window.innerHeight };
+        });
+      });
+      assert(bounds.every(item => item.top >= 0 && item.bottom <= item.viewport), `sample exercise is below the first phone viewport: ${JSON.stringify(bounds)}`);
+      await shot(page, 'demo-first-screen');
+      await context.close();
+    },
+  },
+  {
     id: 'chord-pattern-practice',
     async run(browser) {
       const { context, page } = await fresh(browser);
       await instrumentAudio(page);
       await page.goto(`${base}/demo`);
-      await page.getByRole('button', { name: /Play context/ }).click();
+      await page.getByRole('button', { name: /Play chord pattern/ }).click();
       await page.waitForFunction(() => window.__testOscillatorCount >= 3);
       assert(await page.getByRole('tab', { name: /Note roles/ }).count() === 1, 'note-role practice is missing');
       await page.getByRole('tab', { name: /Progressions/ }).click();
@@ -106,8 +197,9 @@ const tests = [
     async run(browser) {
       const { context, page } = await fresh(browser);
       await page.goto(`${base}/demo`);
-      await page.getByRole('button', { name: /Play context/ }).click();
-      await page.getByRole('button', { name: /Play context|Replay context/ }).waitFor({ state: 'visible', timeout: 5_000 });
+      await page.getByRole('button', { name: /Play chord pattern/ }).click();
+      await page.getByRole('button', { name: /Play chord pattern|Replay chord pattern/ }).waitFor({ state: 'visible', timeout: 5_000 });
+      await openPracticeSettings(page);
       await page.getByLabel(/Explore mode/).uncheck();
       await page.locator('[data-choice]').first().click();
       const scored = JSON.parse((await storageState(page)).demo);
@@ -151,6 +243,7 @@ const tests = [
     async run(browser) {
       const { context, page } = await fresh(browser, true);
       await page.goto(`${base}/demo`);
+      await openPracticeSettings(page);
       await page.getByLabel(/Explore mode/).uncheck();
       await page.locator('[data-choice]').first().click();
       assert(await page.locator('.feedback').count() === 1, 'note choice did not complete');
@@ -159,6 +252,31 @@ const tests = [
       await page.getByRole('button', { name: 'Start microphone' }).click();
       await page.getByRole('button', { name: 'Stop microphone' }).waitFor({ timeout: 5_000 });
       await shot(page, 'choose-or-sing');
+      await context.close();
+    },
+  },
+  {
+    id: 'sung-pitch-feedback',
+    async run(browser) {
+      const { context, page } = await fresh(browser, true);
+      await page.goto(`${base}/demo`);
+      await page.getByRole('tab', { name: /Sing it back/ }).click();
+      await installSyntheticC4Microphone(page);
+      await page.getByRole('button', { name: 'Start microphone' }).click();
+      await page.getByRole('button', { name: 'Stop microphone' }).waitFor({ timeout: 5_000 });
+      await page.getByText(/^C4 · \d+ cents (sharp|flat)$/).waitFor({ timeout: 5_000 });
+      const marker = page.locator('#pitch-marker');
+      assert(await marker.isVisible(), 'detected C4 did not show the keyboard marker');
+      assert(await marker.getAttribute('data-position') === '12', `C4 marker position was ${await marker.getAttribute('data-position')}`);
+      await page.getByRole('button', { name: 'Stop microphone' }).click();
+      const stopped = await page.evaluate(async () => {
+        const state = window.__syntheticPitch.track.readyState;
+        window.__syntheticPitch.oscillator.stop();
+        await window.__syntheticPitch.context.close();
+        return state;
+      });
+      assert(stopped === 'ended', `stopping the microphone left its track ${stopped}`);
+      await shot(page, 'sung-pitch-feedback');
       await context.close();
     },
   },
@@ -184,22 +302,43 @@ const tests = [
       const requests = [];
       page.on('request', request => requests.push({ url: request.url(), method: request.method() }));
       await page.goto(`${base}/demo`, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: /Play context/ }).click();
+      await page.getByRole('button', { name: /Play chord pattern/ }).click();
       await page.locator('[data-choice]').first().click();
       await page.getByRole('tab', { name: /Sing it back/ }).click();
+      await instrumentPrivacy(page);
+      await page.waitForTimeout(250);
+      const before = await persistentAudioState(page);
       await page.evaluate(() => {
-        window.__testRealGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
         navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('Blocked for test', 'NotAllowedError'));
       });
       await page.getByRole('button', { name: 'Start microphone' }).click();
       await page.getByRole('alert').getByText(/Microphone access was blocked/).waitFor();
-      await page.evaluate(() => { navigator.mediaDevices.getUserMedia = window.__testRealGetUserMedia; });
+      await page.evaluate(() => {
+        navigator.mediaDevices.getUserMedia = async constraints => {
+          const stream = await window.__testRealGetUserMedia(constraints);
+          window.__privacyProbe.tracks = stream.getTracks();
+          return stream;
+        };
+      });
       await page.getByRole('button', { name: 'Start microphone' }).click();
       await page.getByRole('button', { name: 'Stop microphone' }).waitFor({ timeout: 5_000 });
       await page.getByRole('button', { name: 'Stop microphone' }).click();
+      await page.waitForTimeout(100);
+      const after = await persistentAudioState(page);
+      const probe = await page.evaluate(() => ({
+        blobCalls: window.__privacyProbe.blobCalls,
+        mediaRecorderCalls: window.__privacyProbe.mediaRecorderCalls,
+        objectUrlCalls: window.__privacyProbe.objectUrlCalls,
+        trackStates: window.__privacyProbe.tracks.map(track => track.readyState),
+      }));
       assert(requests.every(request => new URL(request.url).origin === base), `off-origin request during demo: ${JSON.stringify(requests)}`);
       assert(requests.every(request => request.method === 'GET'), `upload-like request during demo: ${JSON.stringify(requests)}`);
       assert(await page.locator('script[src^="http"], iframe').count() === 0, 'remote script or frame is present');
+      assert(JSON.stringify(after.localStorageState) === JSON.stringify(before.localStorageState), 'microphone use changed local storage');
+      assert(JSON.stringify(after.indexedDb) === JSON.stringify(before.indexedDb), 'microphone use changed IndexedDB');
+      assert(JSON.stringify(after.cacheNames) === JSON.stringify(before.cacheNames), 'microphone use changed Cache Storage');
+      assert(probe.blobCalls === 0 && probe.mediaRecorderCalls === 0 && probe.objectUrlCalls === 0, `microphone retention API was used: ${JSON.stringify(probe)}`);
+      assert(probe.trackStates.length > 0 && probe.trackStates.every(state => state === 'ended'), `microphone tracks were not stopped: ${JSON.stringify(probe.trackStates)}`);
       await shot(page, 'private-audio');
       await context.close();
     },
@@ -253,6 +392,39 @@ const tests = [
     },
   },
   {
+    id: 'level-sets',
+    async run(browser) {
+      const { context, page } = await fresh(browser);
+      await page.addInitScript(() => { Math.random = () => 0.999; });
+      await page.goto(`${base}/demo`);
+      await openPracticeSettings(page);
+      assert(await page.getByText('Higher levels add note roles, chord patterns, or singing targets.').count() === 1, 'difficulty explanation is missing');
+      const level = page.getByLabel('Difficulty level');
+      const starterRoles = await page.locator('[data-choice]').count();
+      await level.selectOption('3');
+      const fullRoles = await page.locator('[data-choice]').count();
+      assert(starterRoles === 3 && fullRoles === 7, `note-role sets were ${starterRoles} and ${fullRoles}`);
+      await page.getByRole('tab', { name: /Progressions/ }).click();
+      await openPracticeSettings(page);
+      const progressionLevel = page.getByLabel('Difficulty level');
+      await progressionLevel.selectOption('1');
+      const starterPatterns = await page.locator('[data-choice]').count();
+      await progressionLevel.selectOption('3');
+      const fullPatterns = await page.locator('[data-choice]').count();
+      assert(starterPatterns === 2 && fullPatterns === 6, `chord-pattern sets were ${starterPatterns} and ${fullPatterns}`);
+      await page.getByRole('tab', { name: /Sing it back/ }).click();
+      await openPracticeSettings(page);
+      const singingLevel = page.getByLabel('Difficulty level');
+      await singingLevel.selectOption('1');
+      const starterTarget = await page.getByText(/^Target:/).textContent();
+      await singingLevel.selectOption('3');
+      const fullTarget = await page.getByText(/^Target:/).textContent();
+      assert(starterTarget === 'Target: G4' && fullTarget === 'Target: D4', `singing targets did not expand: ${starterTarget}, ${fullTarget}`);
+      await shot(page, 'level-sets');
+      await context.close();
+    },
+  },
+  {
     id: 'no-account',
     async run(browser) {
       const { context, page } = await fresh(browser);
@@ -281,7 +453,7 @@ const tests = [
     async run(browser) {
       const { context, page } = await fresh(browser);
       await page.goto(`${base}/demo`);
-      await page.getByRole('button', { name: 'Leave demo and open your practice' }).click();
+      await page.getByRole('button', { name: 'Open your practice' }).click();
       await page.getByRole('button', { name: 'Switch color theme' }).click();
       await page.getByLabel(/Explore mode/).uncheck();
       await page.locator('[data-choice]').first().click();
@@ -420,7 +592,7 @@ async function browserChecks(browser) {
     .filter(target => target.width < 44 || target.height < 44));
   assert(smallTargets.length === 0, `touch targets below 44px: ${JSON.stringify(smallTargets)}`);
   assert(errors.length === 0, `console errors: ${errors.join(' | ')}`);
-  await page.screenshot({ path: 'test-results/browser-mobile.png', fullPage: true });
+  await page.screenshot({ path: browserScreenshot, fullPage: true });
   await context.close();
 }
 
@@ -433,5 +605,10 @@ try {
   if (!filter) { await browserChecks(browser); console.log('PASS browser HTTP routing, metadata, focus, mobile, crawl, and console checks'); }
   await browser.close();
 } finally {
-  server?.kill('SIGTERM');
+  if (server?.pid) {
+    try {
+      if (process.platform === 'win32') server.kill('SIGTERM');
+      else process.kill(-server.pid, 'SIGTERM');
+    } catch { server.kill('SIGTERM'); }
+  }
 }

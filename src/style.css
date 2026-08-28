@@ -82,20 +82,12 @@ h3 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -.025em; margin-bottom: 
 .plain-facts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 24px 0 0; padding: 0; color: var(--ink-soft); font-size: 14px; font-weight: 700; list-style: none; }
 .plain-facts li::before { content: '•'; margin-right: 7px; color: var(--signal-dark); }
 .demo-banner { max-width: 1296px; margin: 8px auto 0; padding: 10px 16px; border: 1.5px dashed var(--tuning); background: var(--paper-deep); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; color: var(--ink); position: sticky; top: 0; z-index: 10; }
-.demo-banner > span:not(.demo-actions) { color: var(--ink-soft); font-size: 14px; }
 .demo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
 .demo-actions button { min-height: 44px; border: 1.5px solid var(--ink); background: var(--paper); padding: 5px 10px; font-weight: 700; }
 .demo-actions button[data-action='start-real'] { color: var(--signal-contrast); border-color: var(--signal-dark); background: var(--signal); }
-.demo-actions small { flex-basis: 100%; color: var(--ink-soft); text-align: right; }
-.demo-hero { padding-top: 30px; padding-bottom: 28px; grid-template-columns: 1fr; }
-.demo-hero .hero-copy { max-width: 700px; }
-.demo-hero h1 { margin-bottom: 12px; font-size: clamp(34px, 5vw, 52px); }
-.demo-hero .dek { margin-bottom: 0; }
-.demo-hero picture { display: none; }
 .hero picture { position: relative; display: block; }
 .hero picture::before { content: ''; position: absolute; width: 34%; height: 46%; top: -16px; right: -16px; border: 1.5px solid var(--tuning); z-index: -1; }
 .hero img { display: block; width: 100%; height: auto; aspect-ratio: 3/2; object-fit: cover; box-shadow: var(--shadow); border: 1px solid rgb(23 33 29 / 15%); }
-.hero.demo-hero picture { display: none; }
 .button-link, button.primary { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 14px; padding: 11px 18px; border: 1.5px solid var(--ink); color: var(--ink); text-decoration: none; font-weight: 800; background: transparent; }
 .button-link.primary, button.primary { background: var(--signal); color: var(--signal-contrast); border-color: var(--signal-dark); }
 .button-link.primary:hover, button.primary:hover { background: var(--signal-dark); }
@@ -104,7 +96,8 @@ h3 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -.025em; margin-bottom: 
 .practice-shell { background: var(--surface); border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); padding: 64px clamp(20px, 5vw, 72px) 72px; }
 .practice-shell > * { max-width: 1296px; margin-left: auto; margin-right: auto; }
 .practice-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
-.practice-heading h2 { margin-bottom: 0; }
+.practice-heading h1, .practice-heading h2 { margin-bottom: 0; }
+.practice-heading h1 { font-size: clamp(32px, 4vw, 46px); }
 .score { padding-bottom: 8px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .score strong { color: var(--ink); font-size: 20px; }
 .score span { margin: 0 8px; }
@@ -115,6 +108,11 @@ h3 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -.025em; margin-bottom: 
 .switch small { color: var(--ink-soft); font-size: 13px; }
 .level-control { grid-template-columns: auto 1fr; align-items: center; }
 .level-control select { min-height: 44px; border: 0; border-bottom: 1.5px solid var(--ink); background: transparent; font-weight: 700; }
+.level-control small { grid-column: 1 / -1; margin-top: 3px; color: var(--ink-soft); font-size: 12px; line-height: 1.3; }
+.demo-setup { margin: 0 auto 16px; border: 1.5px solid var(--line); background: var(--paper-deep); }
+.demo-setup summary { min-height: 44px; display: flex; align-items: center; padding: 8px 14px; cursor: pointer; font-weight: 800; }
+.demo-setup[open] summary { border-bottom: 1.5px solid var(--line); }
+.demo-setup .global-controls { margin: 0; padding: 12px; }
 .module-tabs { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
 .module-tabs button { min-height: 58px; border: 1.5px solid var(--ink); border-right: 0; background: var(--paper-deep); font-weight: 800; text-align: left; padding: 10px 16px; }
 .module-tabs button:last-child { border-right: 1.5px solid var(--ink); }
@@ -275,15 +273,20 @@ footer a, .policy p a { min-width: 44px; min-height: 44px; display: inline-flex;
   .hero-actions > span { max-width: none; }
   .plain-facts { display: block; columns: 2; }
   .plain-facts li { break-inside: avoid; margin-bottom: 4px; }
-  .demo-banner { margin: 0 12px; padding: 10px 12px; }
+  .demo-banner { margin: 0 12px; padding: 6px 10px; gap: 6px 8px; }
   .demo-banner strong { flex-basis: 100%; }
-  .demo-banner > span:not(.demo-actions) { display: none; }
   .demo-actions { width: 100%; margin-left: 0; }
   .demo-actions button { flex: 0 0 auto; font-size: 13px; }
-  .demo-actions button[data-action='start-real'] { flex: 1 1 190px; }
-  .demo-actions small { text-align: left; }
-  .demo-hero { padding-top: 24px; padding-bottom: 28px; }
+  .demo-actions button[data-action='start-real'] { flex: 1 1 0; }
   .practice-shell { padding-left: 12px; padding-right: 12px; }
+  .sample-practice-shell { padding-top: 16px; }
+  .sample-practice-shell .practice-heading { display: flex; align-items: center; margin-bottom: 8px; }
+  .sample-practice-shell .practice-heading h1 { font-size: 30px; }
+  .sample-practice-shell .score { margin-top: 0; padding-bottom: 0; font-size: 14px; }
+  .sample-practice-shell .score strong { font-size: 17px; }
+  .demo-setup { margin-bottom: 8px; }
+  .demo-setup summary { min-height: 44px; padding: 8px 12px; }
+  .demo-setup .global-controls { padding: 8px; }
   .practice-heading { display: block; }
   .score { margin-top: 8px; }
   .global-controls { grid-template-columns: 1fr; }
@@ -293,6 +296,12 @@ footer a, .policy p a { min-width: 44px; min-height: 44px; display: inline-flex;
   .module-tabs button span { display: block; margin: 0; }
   .module-tabs button small { display: block; font-size: 9px; }
   .context-panel, .answer-panel { padding: 24px 18px; }
+  .sample-practice-shell .context-panel, .sample-practice-shell .answer-panel { padding: 12px 14px; }
+  .sample-practice-shell .voice-map { height: 105px; margin: 8px auto 4px; }
+  .sample-practice-shell .diagram-caption { margin-bottom: 8px; font-size: 12px; line-height: 1.3; }
+  .sample-practice-shell .answer-panel .eyebrow { margin-bottom: 6px; font-size: 10px; }
+  .sample-practice-shell .answer-panel h2, .sample-practice-shell .answer-panel h3 { margin-bottom: 8px; font-size: 22px; }
+  .sample-practice-shell .instruction { margin-bottom: 12px; line-height: 1.35; }
   .exercise { min-height: 0; }
   .voice-map { margin: 18px auto 8px; }
   .choice-grid { grid-template-columns: 1fr; }

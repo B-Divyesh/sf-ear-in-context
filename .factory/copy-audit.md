@@ -1,4 +1,4 @@
-# Copy audit — polish round 2
+# Copy audit — polish round 3
 
 Counts treat hyphenated terms and product names as one word. No sentence is
 over 22 words. No banned plain-words term remains in visitor copy.
@@ -16,6 +16,7 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | Nothing is scored | 3 | `explore-unscored` |
 | Level changes are paused | 4 | Direct control state. |
 | Level can change with your score | 6 | `keep-level` |
+| Higher levels add note roles, chord patterns, or singing targets. | 10 | `level-sets` |
 | Each line shows one voice. | 5 | `voice-path-diagram` |
 | Short paths show notes changing by small steps. | 8 | `voice-path-diagram` |
 | Choose any answer to preview its sound. | 7 | `explore-choice-preview` |
@@ -25,7 +26,7 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | Name the next note. | 4 | `choose-or-sing` |
 | Use Note roles or compare Progressions. | 6 | `chord-pattern-practice` |
 | Sing it back. | 3 | `choose-or-sing` |
-| See one sung pitch on the two-octave keyboard. | 9 | `choose-or-sing` |
+| See one sung pitch on the two-octave keyboard. | 9 | `sung-pitch-feedback` |
 | Generated patterns, not song recordings | 5 | `chord-pattern-practice` |
 | The practice makes short chord patterns in your browser. | 9 | `chord-pattern-practice` |
 | It does not load songs or record your voice. | 9 | `private-audio` |
@@ -35,18 +36,19 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | Practice history and settings are stored in your browser’s local storage. | 10 | `local-data-control` |
 | Use Erase local progress to remove training history. | 8 | `local-data-control` |
 | Hear chord patterns, then name or sing the next note. | 10 | `choose-or-sing` |
+| Play chord pattern | 3 | Result-naming action. |
+| Replay chord pattern | 3 | Result-naming action. |
+| Open next question | 3 | Result-naming action. |
+| Back up JSON | 3 | Result-naming action. |
 
 ## Sample practice
 
 | Copy | Words | Claim or result |
 | --- | ---: | --- |
 | Demo — sample data, nothing is saved | 7 | `demo-isolation` |
-| Try each practice mode. | 4 | `chord-pattern-practice` |
-| Your normal progress stays untouched. | 5 | `demo-isolation` |
-| Leave demo and open your practice | 6 | Result-naming action. |
+| Open your practice | 3 | Result-naming action. |
 | Sample progress is discarded; saved progress is unchanged. | 8 | `demo-isolation` |
 | Sample practice | 2 | One consistent page name. |
-| Play the short chord pattern, choose the next note, or open Sing it back. | 14 | `chord-pattern-practice`, `choose-or-sing` |
 
 ## README sentences
 
@@ -56,7 +58,7 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | It uses generated chord patterns instead of song recordings. | 8 | `chord-pattern-practice` |
 | Play a short chord pattern, choose the next note, or sing it back. | 12 | `cadence-choice-flow`, `choose-or-sing` |
 | `/demo` and `/?demo=1` open the same sample practice. | 8 | `demo-isolation` |
-| The banner offers Reset demo and Leave demo and open your practice. | 12 | `demo-isolation` |
+| The banner offers Reset demo and Open your practice. | 9 | `demo-isolation` |
 | Sample progress is separate from normal progress. | 7 | `demo-isolation` |
 | Leaving the demo discards the sample and keeps normal progress unchanged. | 11 | `demo-isolation` |
 | Explore mode previews choices without scoring them. | 7 | `explore-unscored`, `explore-choice-preview` |
@@ -84,3 +86,4 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | non-scoring sound preview | Explore mode |
 | scored answer state | Scoring mode |
 | repeated chord audio | chord pattern |
+| difficulty choices | Starter set, Larger set, Full set |

@@ -6,5 +6,5 @@ banner says **Demo — sample data, nothing is saved**.
 
 Demo progress is stored only under `demo:ear-in-context:progress:v1`. Real
 progress remains under `ear-in-context:progress:v1` and is never read or
-written while demo mode is active. **Reset demo** reseeds the sample. **Leave
-demo and open your practice** deletes the demo key and restores normal progress.
+written while demo mode is active. **Reset demo** reseeds the sample. **Open
+your practice** deletes the demo key and restores normal progress.

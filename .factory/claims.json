@@ -7,6 +7,13 @@
     "sandbox": "Fresh context seeds normal progress, enters ?demo=1, scores and resets a sample answer, leaves, and compares both storage namespaces."
   },
   {
+    "id": "demo-first-screen",
+    "claim": "Sample practice shows a playable chord pattern, question, and answer in the first phone screen.",
+    "where": "/demo sample practice",
+    "test": "npm run test:claims -- --grep @claim:demo-first-screen",
+    "sandbox": "Fresh 390 × 844 context clicks the landing action and asserts the voice map, play button, question, and first answer fit before scrolling."
+  },
+  {
     "id": "chord-pattern-practice",
     "claim": "Practice uses generated chord patterns across note-role, progression, and singing exercises.",
     "where": "home headline, how it works, README",
@@ -39,7 +46,14 @@
     "claim": "Name or sing the next note.",
     "where": "how it works, footer, README",
     "test": "npm run test:claims -- --grep @claim:choose-or-sing",
-    "sandbox": "Fresh /demo context completes a named-note answer, opens Sing it back, and starts a permitted fake microphone stream."
+    "sandbox": "Fresh /demo context completes a named-note answer and opens the sung-note target; the detected sung-pitch outcome is covered by sung-pitch-feedback."
+  },
+  {
+    "id": "sung-pitch-feedback",
+    "claim": "See one sung pitch on the two-octave keyboard.",
+    "where": "how it works, home metadata, Sing it back",
+    "test": "npm run test:claims -- --grep @claim:sung-pitch-feedback",
+    "sandbox": "Fresh /demo context sends a synthetic 261.625565 Hz C4 stream through getUserMedia and asserts the C4 label, visible marker, marker position 12, and stopped track."
   },
   {
     "id": "voice-path-diagram",
@@ -63,11 +77,18 @@
     "sandbox": "Fresh /demo state reaches the advancement threshold twice and compares the resulting level with the control off and on."
   },
   {
+    "id": "level-sets",
+    "claim": "Higher levels add note roles, chord patterns, or singing targets.",
+    "where": "difficulty control",
+    "test": "npm run test:claims -- --grep @claim:level-sets",
+    "sandbox": "Fresh /demo context compares starter and full sets in Note roles, Progressions, and Sing it back."
+  },
+  {
     "id": "private-audio",
     "claim": "Practice audio stays in your browser; microphone sound is analysed live and not retained.",
     "where": "landing facts, boundaries, privacy, README",
     "test": "npm run test:claims -- --grep @claim:private-audio",
-    "sandbox": "Fresh /demo context intercepts the full play, preview, microphone-start, and microphone-stop flow and permits same-origin requests only."
+    "sandbox": "Fresh /demo context intercepts the full play, preview, denied microphone, start, and stop flow; it permits same-origin GETs only, snapshots localStorage/IndexedDB/Cache Storage, rejects MediaRecorder or Blob use, checks object-URL creation, and asserts every microphone track stops."
   },
   {
     "id": "no-account",

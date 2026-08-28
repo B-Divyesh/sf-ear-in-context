@@ -121,7 +121,8 @@ function updatePlayState(): void {
   const button = document.querySelector<HTMLButtonElement>('[data-action="play"]');
   if (button) {
     button.disabled = playing;
-    button.textContent = playing ? 'Playing…' : answer ? 'Replay context' : 'Play context';
+    const label = playing ? 'Playing…' : answer ? 'Replay chord pattern' : 'Play chord pattern';
+    button.innerHTML = `<span class="play-icon" aria-hidden="true">▶</span>${label} <kbd>Space</kbd>`;
   }
   if (!playing) document.querySelectorAll('.voice-column').forEach(node => node.classList.remove('is-sounding'));
 }
@@ -230,7 +231,9 @@ function voiceDiagram(item: Exercise): string {
     paths += `<polyline points="${points}" />`;
   }
   const columns = item.sequence.map((chord, index) => `<g class="voice-column ${activeStep === index ? 'is-sounding' : ''}">${chord.map(midi => `<circle cx="${x(index)}" cy="${y(midi)}" r="7" />`).join('')}</g>`).join('');
-  return `<svg class="voice-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="A voice-leading map with ${item.sequence.length} harmonic events"><g class="voice-paths">${paths}</g>${columns}</svg>`;
+  const countNames = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
+  const groupCount = countNames[item.sequence.length] ?? String(item.sequence.length);
+  return `<svg class="voice-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="Chord pattern with ${groupCount} note groups and one line for each voice."><g class="voice-paths">${paths}</g>${columns}</svg>`;
 }
 
 function pianoKeyboard(): string {
@@ -268,6 +271,15 @@ function renderHeader(): string {
 
 function renderFooter(): string {
   return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory</a> · v1.2.0</p></footer>`;
+}
+
+function practiceControls(): string {
+  const controls = `<div class="global-controls" aria-label="Practice controls">
+    <label class="switch"><input type="checkbox" data-control="sandbox" ${progress.sandbox ? 'checked' : ''}><span>Explore mode</span><small>${progress.sandbox ? 'Nothing is scored' : 'Scoring is on'}</small></label>
+    <label class="switch"><input type="checkbox" data-control="hold" ${progress.holdLevel ? 'checked' : ''}><span>Keep current level</span><small>${progress.holdLevel ? 'Level changes are paused' : 'Level can change with your score'}</small></label>
+    <label class="level-control"><span>Difficulty</span><select data-control="level" aria-label="Difficulty level"><option value="1" ${progress.level[moduleId] === 1 ? 'selected' : ''}>1 · Starter set</option><option value="2" ${progress.level[moduleId] === 2 ? 'selected' : ''}>2 · Larger set</option><option value="3" ${progress.level[moduleId] === 3 ? 'selected' : ''}>3 · Full set</option></select><small>Higher levels add note roles, chord patterns, or singing targets.</small></label>
+  </div>`;
+  return isDemo ? `<details class="demo-setup"><summary>Practice settings</summary>${controls}</details>` : controls;
 }
 
 function renderPolicy(kind: 'privacy' | 'terms'): void {
@@ -319,19 +331,15 @@ function render(): void {
   if (current === 'not-found') { renderNotFound(); setRouteMetadata(current); finishRoute(); return; }
   if (current !== 'practice') { renderPolicy(current); setRouteMetadata(current); finishRoute(); return; }
   app.innerHTML = `${renderHeader()}<main id="main">
-    ${isDemo ? `<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span>Try each practice mode. Your normal progress stays untouched.</span><span class="demo-actions"><button data-action="reset-demo">Reset demo</button><button data-action="start-real">Leave demo and open your practice</button><small>Sample progress is discarded; saved progress is unchanged.</small></span></aside>` : ''}
+    ${isDemo ? `<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span class="demo-actions"><button data-action="reset-demo">Reset demo</button><button data-action="start-real" aria-describedby="demo-exit-note">Open your practice</button></span><span id="demo-exit-note" class="sr-only">Sample progress is discarded. Saved progress is unchanged.</span></aside>` : ''}
     ${!online ? '<div class="offline-banner" role="status">Offline practice is ready.</div>' : ''}
-    <section class="hero ${isDemo ? 'demo-hero' : ''}" aria-labelledby="hero-title">
-      <div class="hero-copy"><p class="eyebrow">${isDemo ? 'Sample practice ready' : 'Ear training for self-taught musicians'}</p><h1 id="hero-title" tabindex="-1">${isDemo ? 'Sample practice' : 'Practice hearing harmony in chord patterns'}</h1><p class="dek">${isDemo ? 'Play the short chord pattern, choose the next note, or open Sing it back.' : 'For self-taught musicians who want to hear how notes move together.'}</p>${isDemo ? '' : '<div class="hero-actions"><a class="button-link primary" href="/demo" data-nav="/demo">Try sample practice</a><span>Hear a short chord pattern, then choose the next note.</span></div><ul class="plain-facts"><li>No account</li><li>Practice audio stays in your browser</li><li>Core practice and CSV export stay free</li></ul>'}</div>
+    ${!isDemo ? `<section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy"><p class="eyebrow">Ear training for self-taught musicians</p><h1 id="hero-title" tabindex="-1">Practice hearing harmony in chord patterns</h1><p class="dek">For self-taught musicians who want to hear how notes move together.</p><div class="hero-actions"><a class="button-link primary" href="/demo" data-nav="/demo">Try sample practice</a><span>Hear a short chord pattern, then choose the next note.</span></div><ul class="plain-facts"><li>No account</li><li>Practice audio stays in your browser</li><li>Core practice and CSV export stay free</li></ul></div>
       <picture><source srcset="/assets/voice-paths.webp" type="image/webp"><img src="/assets/voice-paths.jpg" width="1200" height="800" alt="Paper pitch tokens connected by gently moving teal voice paths" fetchpriority="high" decoding="async"></picture>
-    </section>
-    <section id="practice" class="practice-shell" aria-labelledby="practice-title">
-      <div class="practice-heading"><div><p class="eyebrow">Listen, choose, sing</p><h2 id="practice-title">Today’s ear practice</h2></div><div class="score" aria-label="Session progress"><strong>${progress.answered}</strong> answered <span>·</span> <strong>${accuracy()}%</strong> right</div></div>
-      <div class="global-controls" aria-label="Practice controls">
-        <label class="switch"><input type="checkbox" data-control="sandbox" ${progress.sandbox ? 'checked' : ''}><span>Explore mode</span><small>${progress.sandbox ? 'Nothing is scored' : 'Scoring is on'}</small></label>
-        <label class="switch"><input type="checkbox" data-control="hold" ${progress.holdLevel ? 'checked' : ''}><span>Keep current level</span><small>${progress.holdLevel ? 'Level changes are paused' : 'Level can change with your score'}</small></label>
-        <label class="level-control"><span>Level</span><select data-control="level" aria-label="Difficulty level"><option value="1" ${progress.level[moduleId] === 1 ? 'selected' : ''}>1 · Ground</option><option value="2" ${progress.level[moduleId] === 2 ? 'selected' : ''}>2 · Colour</option><option value="3" ${progress.level[moduleId] === 3 ? 'selected' : ''}>3 · Tension</option></select></label>
-      </div>
+    </section>` : ''}
+    <section id="practice" class="practice-shell ${isDemo ? 'sample-practice-shell' : ''}" aria-labelledby="practice-title">
+      <div class="practice-heading"><div>${isDemo ? '<h1 id="practice-title" tabindex="-1">Sample practice</h1>' : '<p class="eyebrow">Listen, choose, sing</p><h2 id="practice-title">Today’s ear practice</h2>'}</div><div class="score" aria-label="Session progress"><strong>${progress.answered}</strong> answered <span>·</span> <strong>${accuracy()}%</strong> right</div></div>
+      ${practiceControls()}
       <div class="module-tabs" role="tablist" aria-label="Training module">
         <button id="module-tab-intervals" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'intervals'}" tabindex="${moduleId === 'intervals' ? '0' : '-1'}" data-module="intervals"><span>01</span> Note roles <small>(scale degrees)</small></button>
         <button id="module-tab-progressions" role="tab" aria-controls="practice-panel" aria-selected="${moduleId === 'progressions'}" tabindex="${moduleId === 'progressions' ? '0' : '-1'}" data-module="progressions"><span>02</span> Progressions</button>
@@ -342,7 +350,7 @@ function render(): void {
     ${!isDemo ? `<section class="how-it-works" aria-labelledby="how-title"><p class="eyebrow">Three ways to practise</p><h2 id="how-title">Listen, choose, then sing</h2><ol><li><strong>Play a chord pattern.</strong><span>Hear where the home chord settles.</span></li><li><strong>Name the next note.</strong><span>Use Note roles or compare Progressions.</span></li><li><strong>Sing it back.</strong><span>See one sung pitch on the two-octave keyboard.</span></li></ol></section><section class="boundaries" aria-labelledby="boundaries-title"><div><p class="eyebrow">Clear boundaries</p><h2 id="boundaries-title">Generated patterns, not song recordings</h2></div><p>The practice makes short chord patterns in your browser. It does not load songs or record your voice. Microphone sound is analysed live and is not retained.</p></section><section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a JSON backup. Core practice and CSV export stay free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Buy Studio</a>`}</div></section>` : ''}
     <section class="settings" aria-labelledby="settings-title"><details><summary id="settings-title">Progress, sound & license</summary><div class="settings-grid">
       <div><h3>Sound texture</h3><div class="texture-options"><button data-texture="warm" aria-label="Warm texture, free" aria-pressed="${texture() === 'warm'}">Warm <small>Free</small></button><button data-texture="clarity" aria-label="Clarity texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'clarity'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Clarity <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button><button data-texture="reed" aria-label="Reed texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'reed'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Reed <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button></div></div>
-      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have scored answers.` : 'No scored answers yet. Turn off Explore mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Back up progress as JSON" data-action="backup">Backup JSON</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
+      <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have scored answers.` : 'No scored answers yet. Turn off Explore mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Back up progress as JSON" data-action="backup">Back up JSON</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
       <form id="license-form"><h3>Restore Studio</h3><label for="license-token">Have a license? Paste it here.</label><input id="license-token" name="license" autocomplete="off" spellcheck="false" required><button aria-label="Verify Studio license" type="submit">Verify license</button><p id="license-status" role="status" tabindex="-1">${licenseNotice}</p><p class="fine">Checkout and refunds are handled by Sociobot/Dodo. <a href="/terms" data-nav="/terms">Read the terms</a>.</p></form>
     </div></details></section>
   </main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
@@ -357,14 +365,15 @@ function renderPractice(): void {
   const panel = document.querySelector<HTMLDivElement>('#practice-panel');
   if (!panel) return;
   const modeLabel = progress.sandbox ? 'Explore mode · preview sounds' : 'Scoring mode · answer when ready';
-  const result = answer ? `<div class="feedback ${answerCorrect ? 'correct' : 'incorrect'}" role="status"><strong>${answerCorrect ? '✓ You heard the path.' : `↗ The answer was ${exercise.answer}.`}</strong><p>${exercise.explanation}</p><button class="primary" data-action="next">Next sound <kbd>N</kbd></button></div>` : '';
+  const result = answer ? `<div class="feedback ${answerCorrect ? 'correct' : 'incorrect'}" role="status"><strong>${answerCorrect ? '✓ You heard the path.' : `↗ The answer was ${exercise.answer}.`}</strong><p>${exercise.explanation}</p><button class="primary" data-action="next">Open next question <kbd>N</kbd></button></div>` : '';
+  const exerciseHeading = isDemo ? 'h2' : 'h3';
   const choices = exercise.choices.filter(choice => {
     const source = exercisesByModule[moduleId].find(item => item.answer === choice);
     return !source || source.level <= progress.level[moduleId];
   });
   panel.innerHTML = `<article class="exercise" aria-labelledby="exercise-title">
-    <div class="context-panel"><div class="exercise-meta"><span>${modeLabel}</span><span>Level ${exercise.level}</span></div>${voiceDiagram(exercise)}<p class="diagram-caption">Each line shows one voice. Short paths show notes changing by small steps.</p><button class="listen-button" data-action="play" ${playing ? 'disabled' : ''}><span class="play-icon" aria-hidden="true">▶</span>${playing ? 'Playing…' : answer ? 'Replay context' : 'Play context'} <kbd>Space</kbd></button></div>
-    <div class="answer-panel"><p class="eyebrow">${moduleId === 'sing' ? 'Voice feedback' : 'Your ear'}</p><h3 id="exercise-title">${exercise.prompt}</h3><p class="instruction">${moduleId === 'sing' ? 'Listen first, then start the mic. The marker shows your current note—not a recording.' : progress.sandbox ? 'Choose any answer to preview its sound. Turn off Explore mode to score your answer.' : 'Listen for the note’s role in the chord pattern.'}</p>
+    <div class="context-panel"><div class="exercise-meta"><span>${modeLabel}</span><span>Level ${exercise.level}</span></div>${voiceDiagram(exercise)}<p class="diagram-caption">Each line shows one voice. Short paths show notes changing by small steps.</p><button class="listen-button" data-action="play" ${playing ? 'disabled' : ''}><span class="play-icon" aria-hidden="true">▶</span>${playing ? 'Playing…' : answer ? 'Replay chord pattern' : 'Play chord pattern'} <kbd>Space</kbd></button></div>
+    <div class="answer-panel"><p class="eyebrow">${moduleId === 'sing' ? 'Voice feedback' : 'Your ear'}</p><${exerciseHeading} id="exercise-title">${exercise.prompt}</${exerciseHeading}><p class="instruction">${moduleId === 'sing' ? 'Listen first, then start the mic. The marker shows your current note—not a recording.' : progress.sandbox ? 'Choose any answer to preview its sound. Turn off Explore mode to score your answer.' : 'Listen for the note’s role in the chord pattern.'}</p>
       ${moduleId === 'sing' ? `${pianoKeyboard()}<div class="pitch-readout"><strong id="detected-pitch">${micActive ? 'Listening…' : 'Mic is off'}</strong><span>Target: ${exercise.answer}</span></div><div class="button-row"><button data-action="mic" class="mic-button">${micActive ? 'Stop microphone' : 'Start microphone'}</button>${progress.sandbox ? '<button data-action="next" class="target-button">Try another target</button>' : ''}</div><p id="mic-error" class="inline-error" role="alert" hidden></p>` : `<div class="choice-grid">${choices.map((choice, index) => `<button data-choice="${choice}" ${answer ? 'disabled' : ''} class="${answer && choice === exercise.answer ? 'answer-correct' : answer === choice ? 'answer-wrong' : ''}"><kbd>${index + 1}</kbd><span>${choice}</span>${progress.sandbox ? '<small>Preview</small>' : ''}</button>`).join('')}</div>`}
       ${result}
     </div>

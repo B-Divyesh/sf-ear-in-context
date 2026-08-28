@@ -9,7 +9,7 @@ short chord pattern, choose the next note, or sing it back.
 ## Use the sample practice
 
 `/demo` and `/?demo=1` open the same sample practice. The banner offers
-**Reset demo** and **Leave demo and open your practice**.
+**Reset demo** and **Open your practice**.
 
 Sample progress is separate from normal progress. Leaving the demo discards
 the sample and keeps normal progress unchanged. Explore mode previews choices
