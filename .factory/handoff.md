@@ -2,40 +2,67 @@
 
 ## Outcome
 
-Review round 4 is recorded in `.factory/review-4.md` with a **FAIL** verdict:
-2 major and 3 minor findings, with no blocking finding. Product code was not
-modified.
+Release candidate `c2dfe354f904f57d2e14860c9a7df53353b2a7de` was repaired and
+deployed as `6e1310074f5b53ea5803097058287997e525e343`.
 
-The live cold first read, one-click demo, storage isolation, offline behavior,
-route structure, prior repairs, and all 19 registered claims pass. The open
-work is copy and claim completeness: unlisted legal/billing/privacy promises,
-future “stay free” wording that exceeds its present-state test, unexplained
-JSON terminology, the visible Theme control, and mixed practice/practise
-spelling.
+Round-four's five findings are closed. The app now has fully registered
+billing/privacy/license/runtime claims, an explicit locally stored-license
+removal action, a recorded Sociobot checkout contract fixture, bounded
+present-tense free-core language, plain progress-backup language, a responsive
+result-naming theme control, and consistent **practice** spelling. The isolated
+sample, routing, 404, metadata, accessibility, and product-specific warm-paper
+voice-path visual system remain intact.
 
-## Verification performed
+Deployment used the work-order Azure Static Web Apps configuration:
 
-- Fresh live Chromium contexts at 390 × 844 and 1440 × 900.
-- Separate clean clone at `/tmp/eic-review4-clean.is61FY`; every exact command
-  in `.factory/claims.json` ran individually and passed (19/19).
-- `npm test`, `npm run build`, `npm audit --omit=dev`.
-- `LIVE_URL=https://ear-in-context.sociobot.in npm run test:live`.
-- Local and live `npm run audit:a11y`: zero serious/critical Axe findings and
-  zero console errors.
-- Factory `verify-url.sh`, route/link crawl, HTTP headers, deep-link/404,
-  metadata, focus/Back, mobile first-viewport, demo namespace/reset/exit,
-  microphone privacy, and offline reload checks.
-- Live/local production JS and CSS hashes match.
+- Static app: `sf-ear-in-context`
+- Deployment ID: `0c238fea-9ccb-482f-9d65-59832e0eea4d`
+- Live URL: <https://ear-in-context.sociobot.in>
 
-## Files changed
+## How to run and verify
 
-- `.factory/review-4.md` — complete review, copy audit, claims results,
-  historical finding matrix, structure checks, and verdict.
-- `.factory/handoff.md` — this review handoff.
+```bash
+npm ci
+npm test
+npm run build
+npm run test:browser
+npm run preview -- --host 127.0.0.1
+# In another terminal:
+npm run audit:a11y
+LIVE_URL=https://ear-in-context.sociobot.in npm run test:live
+AUDIT_URL=https://ear-in-context.sociobot.in npm run audit:a11y
+```
 
-## Next steps
+Run each exact command in `.factory/claims.json` independently to verify an
+individual claim. The demo entry point is `/demo` or `/?demo=1`; its storage
+namespace, seed, reset, and exit behavior are documented in `.factory/demo.md`.
 
-Resolve F-4-1 through F-4-5 without weakening the working demo or existing
-claim coverage, then rerun the entire review checklist. The most direct path is
-to narrow untestable copy, add tests only for retained observable promises, and
-normalize the remaining labels and spelling.
+## Exact evidence
+
+- Clean clone: `/tmp/ear-in-context-polish-4.EzbNX1` at repair commit
+  `6e1310074f5b53ea5803097058287997e525e343`.
+- `npm ci` passed: 58 packages, 0 vulnerabilities.
+- `npm test` passed: 3 files, 8 tests.
+- `npm run build` passed and emitted `dist/index.html`; production output is
+  34.43 kB JS (12.07 kB gzip) and 21.61 kB CSS (5.24 kB gzip).
+- All 21 `.factory/claims.json` commands passed separately from that clean
+  clone. The aggregate browser suite also passed all 21 claims plus HTTP 404,
+  route metadata, focus/Back behavior, mobile overflow/touch targets, crawl,
+  and console checks.
+- Local and live `npm run audit:a11y` passed: zero serious/critical Axe
+  violations and zero console errors across light/dark, home, demo, legal,
+  singing, and not-found states.
+- Live URL verifier passed: title, `lang`, one h1, main landmark, image alt,
+  labelled buttons, and no console errors. Evidence:
+  `.factory/evidence/polish-4-live/verify.json`.
+- Live claim/routing checks passed 21/21. Screenshots and browser evidence are
+  in `.factory/evidence/polish-4-live/`.
+- Live Lighthouse mobile passed: Performance 100, Accessibility 100, Best
+  Practices 100, SEO 100; FCP 0.9 s, LCP 1.0 s, TBT 10 ms, CLS 0. Report:
+  `.factory/evidence/polish-4-live/lighthouse-live-mobile.json`.
+- `npm audit --omit=dev` passed with 0 vulnerabilities.
+
+## Known gaps and next steps
+
+None. All reported findings, including prior rounds' reopened checks, are
+closed and rechecked against the deployed production URL.
