@@ -26,7 +26,7 @@ over 22 words. No banned plain-words term remains in visitor copy.
 | Name the next note. | 4 | `choose-or-sing` |
 | Use Note roles or compare Progressions. | 6 | `chord-pattern-practice` |
 | Sing it back. | 3 | `choose-or-sing` |
-| See one sung pitch on the two-octave keyboard. | 9 | `sung-pitch-feedback` |
+| See one sung pitch on the two-octave keyboard. | 8 | `sung-pitch-feedback` |
 | Generated patterns, not song recordings | 5 | `chord-pattern-practice` |
 | The practice makes short chord patterns in your browser. | 9 | `chord-pattern-practice` |
 | It does not load songs or record your voice. | 9 | `private-audio` |

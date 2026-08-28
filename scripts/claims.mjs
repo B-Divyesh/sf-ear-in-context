@@ -205,6 +205,8 @@ const tests = [
       const scored = JSON.parse((await storageState(page)).demo);
       assert(scored.answered === 4, `answer did not update the score: ${scored.answered}`);
       assert(await page.locator('.feedback').count() === 1, 'answer did not produce feedback');
+      assert(await page.getByRole('button', { name: /Open next question/ }).count() === 1, 'scored result does not name the next question action');
+      assert(await page.getByRole('button', { name: /Replay chord pattern/ }).count() === 1, 'replay action does not name the chord pattern');
       await shot(page, 'cadence-choice-flow');
       await context.close();
     },
@@ -291,6 +293,7 @@ const tests = [
         voices: Math.max(...Array.from(svg.querySelectorAll('.voice-column')).map(column => column.querySelectorAll('circle').length)),
       }));
       assert(counts.paths === counts.voices && counts.paths > 0, 'diagram lines do not map one-to-one to voices');
+      assert(await page.locator('.voice-map').getAttribute('aria-label') === 'Chord pattern with four note groups and one line for each voice.', 'diagram accessible name is not plain language');
       await shot(page, 'voice-path-diagram');
       await context.close();
     },
@@ -509,6 +512,7 @@ const tests = [
       }
       await page.getByRole('button', { name: 'Clarity texture, Studio' }).click();
       await page.getByText('Progress, sound & license').click();
+      assert(await page.getByText('Back up JSON', { exact: true }).count() === 1, 'backup action does not use a verb');
       const download = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Back up progress as JSON' }).click();
       assert((await download).suggestedFilename() === 'ear-in-context-backup.json', 'Studio backup did not download');
