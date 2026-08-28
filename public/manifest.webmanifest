@@ -1,7 +1,7 @@
 {
   "name": "Ear in Context",
   "short_name": "Ear in Context",
-  "description": "Context-first ear training that waits for you.",
+  "description": "Practice hearing harmony in chord patterns.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f0e7",

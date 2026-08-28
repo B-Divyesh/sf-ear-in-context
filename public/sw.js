@@ -1,5 +1,5 @@
-const CACHE = 'ear-in-context-v1';
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/assets/voice-paths.webp'];
+const CACHE = 'ear-in-context-v2';
+const SHELL = ['/', '/demo', '/privacy', '/terms', '/manifest.webmanifest', '/favicon.svg', '/assets/voice-paths.webp'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
 self.addEventListener('fetch', event => {

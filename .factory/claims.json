@@ -1,0 +1,44 @@
+[
+  {
+    "id": "demo-isolation",
+    "claim": "Demo — sample data, nothing is saved",
+    "where": "/demo banner and landing action",
+    "test": "npm run test:claims -- --grep @claim:demo-isolation",
+    "sandbox": "Fresh browser context seeds real progress, opens ?demo=1, answers a sample question, and compares real and demo localStorage keys."
+  },
+  {
+    "id": "private-audio",
+    "claim": "Practice audio stays in your browser",
+    "where": "landing facts",
+    "test": "npm run test:claims -- --grep @claim:private-audio",
+    "sandbox": "Fresh /demo context plays the sample and asserts every request is same-origin."
+  },
+  {
+    "id": "no-account",
+    "claim": "No account",
+    "where": "landing facts",
+    "test": "npm run test:claims -- --grep @claim:no-account",
+    "sandbox": "Fresh /demo context reaches the seeded practice without a sign-in or account-creation step."
+  },
+  {
+    "id": "csv-export",
+    "claim": "CSV export is free",
+    "where": "landing facts and export control",
+    "test": "npm run test:claims -- --grep @claim:csv-export",
+    "sandbox": "Fresh /demo context downloads CSV and checks its header and two seeded review rows."
+  },
+  {
+    "id": "studio-unlock",
+    "claim": "Studio adds Clarity and Reed textures plus a JSON backup for a $24 one-time purchase",
+    "where": "Studio section and terms",
+    "test": "npm run test:claims -- --grep @claim:studio-unlock",
+    "sandbox": "Fresh context checks the production checkout URL and price, then restores a local test license and downloads the JSON backup."
+  },
+  {
+    "id": "offline-reload",
+    "claim": "Offline practice is ready after the first visit",
+    "where": "offline status banner and README",
+    "test": "npm run test:claims -- --grep @claim:offline-reload",
+    "sandbox": "Fresh /demo context establishes service-worker control, goes offline, reloads, and finds the sample practice heading."
+  }
+]

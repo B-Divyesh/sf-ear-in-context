@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://ear-in-context.sociobot.in/sitemap.xml

@@ -89,7 +89,9 @@ const secondMarkerLeft = await marker.evaluate(element => element.getBoundingCli
 if (secondMarkerLeft <= firstMarkerLeft + 100) errors.push('Pitch marker did not move across the keyboard.');
 
 const singResults = await new AxeBuilder({ page }).analyze();
-const serious = [...initialResults.violations, ...singResults.violations]
+await page.goto(new URL('/demo', url).href, { waitUntil: 'networkidle' });
+const demoResults = await new AxeBuilder({ page }).analyze();
+const serious = [...initialResults.violations, ...singResults.violations, ...demoResults.violations]
   .filter(item => ['serious', 'critical'].includes(item.impact ?? ''));
 console.log(JSON.stringify({
   seriousViolations: serious.length,

@@ -8,6 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:claims": "npm run build && node scripts/claims.mjs",
+    "test:browser": "npm run build && node scripts/claims.mjs",
     "audit:a11y": "node scripts/a11y-audit.mjs"
   },
   "devDependencies": {

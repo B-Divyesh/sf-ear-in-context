@@ -3,14 +3,18 @@ import { closeAudio, playNote, playSequence } from './audio';
 import { exercisesByModule, frequencyToMidi, midiName, type Exercise, type ModuleId, type TextureId } from './music';
 import { startPitchMonitor, type PitchMonitor } from './pitch';
 import { chooseExercise, nextLevel, schedule, type ProgressState } from './scheduler';
-import { clearProgress, exportCsv, loadProgress, saveProgress } from './storage';
+import { clearProgress, exportCsv, loadProgress, resetDemoProgress, saveProgress, useDemoStorage } from './storage';
 import { captureLicenseFromUrl, checkoutUrl, hasOptimisticUnlock, storeLicense, verifyLicense } from './license';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('App root is missing');
 const app: HTMLDivElement = root;
+let routeFocusPending = false;
 
+let isDemo = location.pathname === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+useDemoStorage(isDemo);
 let progress: ProgressState = loadProgress();
+if (isDemo && progress.answered === 0 && Object.keys(progress.reviews).length === 0) progress = resetDemoProgress();
 let moduleId: ModuleId = 'intervals';
 let exercise: Exercise = chooseExercise(exercisesByModule[moduleId], progress, moduleId);
 let answer: string | null = null;
@@ -20,8 +24,8 @@ let activeStep = -1;
 let micMonitor: PitchMonitor | null = null;
 let micActive = false;
 let pitchHold = 0;
-const capturedLicense = captureLicenseFromUrl();
-let studioUnlocked = hasOptimisticUnlock();
+const capturedLicense = isDemo ? false : captureLicenseFromUrl();
+let studioUnlocked = isDemo ? false : hasOptimisticUnlock();
 let licenseNotice = capturedLicense ? 'Studio license saved. Welcome.' : '';
 let online = navigator.onLine;
 
@@ -32,17 +36,50 @@ if (progress.lastVisit !== today) {
   saveProgress(progress);
 }
 
-function route(): 'practice' | 'privacy' | 'terms' {
+function route(): 'practice' | 'privacy' | 'terms' | 'not-found' {
   if (location.pathname.startsWith('/privacy')) return 'privacy';
   if (location.pathname.startsWith('/terms')) return 'terms';
-  return 'practice';
+  if (location.pathname === '/' || location.pathname === '/demo') return 'practice';
+  return 'not-found';
 }
 
 function navigate(path: string): void {
+  if (path === '/demo') {
+    enterDemo();
+    return;
+  }
+  if (path === '/' && isDemo) {
+    startForReal();
+    return;
+  }
   history.pushState({}, '', path);
   stopMic();
+  routeFocusPending = true;
   render();
   window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
+function enterDemo(): void {
+  stopMic();
+  isDemo = true;
+  useDemoStorage(true);
+  progress = loadProgress();
+  if (progress.answered === 0 && Object.keys(progress.reviews).length === 0) progress = resetDemoProgress();
+  history.pushState({}, '', '/demo');
+  routeFocusPending = true;
+  render();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+function startForReal(): void {
+  stopMic();
+  isDemo = false;
+  useDemoStorage(false);
+  progress = loadProgress();
+  history.pushState({}, '', '/');
+  routeFocusPending = true;
+  render();
+  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 function setExercise(next?: Exercise): void {
@@ -221,6 +258,7 @@ function renderHeader(): string {
     <a class="wordmark" href="/" data-nav="/"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> Ear in Context</a>
     <nav aria-label="Site navigation">
       <a href="/" data-nav="/">Practice</a>
+      <a href="/demo" data-nav="/demo">Demo</a>
       <a href="/privacy" data-nav="/privacy">Privacy</a>
       <button class="theme-button" data-action="theme" type="button" aria-label="Switch color theme">◐ <span>Theme</span></button>
     </nav>
@@ -228,28 +266,65 @@ function renderHeader(): string {
 }
 
 function renderFooter(): string {
-  return `<footer><p>Private by default. Your audio never leaves this device.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · Generated hero artwork, 2026.</p></footer>`;
+  return `<footer><p>Hear chord patterns, then name or sing the next note.</p><p><a href="/privacy" data-nav="/privacy">Privacy</a> · <a href="/terms" data-nav="/terms">Terms</a> · <a href="https://sociobot.in">Built by Param Factory</a> · v1.1.0</p></footer>`;
 }
 
 function renderPolicy(kind: 'privacy' | 'terms'): void {
   const privacy = kind === 'privacy';
-  app.innerHTML = `${renderHeader()}<main id="main" class="policy"><p class="eyebrow">Plain-language ${privacy ? 'privacy' : 'terms'}</p><h1>${privacy ? 'Your practice stays yours.' : 'Fair terms for a practice tool.'}</h1>
+  app.innerHTML = `${renderHeader()}<main id="main" class="policy"><p class="eyebrow">Plain-language ${privacy ? 'privacy' : 'terms'}</p><h1 tabindex="-1">${privacy ? 'Privacy for your ear practice' : 'Terms for ear practice'}</h1>
     ${privacy ? `<h2>What is stored</h2><p>Practice history, settings, and any Studio license are stored in your browser's local storage. Microphone audio is analysed live on your device and is never recorded, uploaded, or retained.</p><h2>Network requests</h2><p>The free trainer works without an account. If you buy or verify Studio, your browser contacts the Sociobot billing API with your license token. Sociobot/Dodo is the merchant of record and handles checkout records. This site has no behavioural analytics, ads, or third-party scripts.</p><h2>Your control</h2><p>Use “Erase local progress” in Practice to remove training history. Browser site settings can remove all data, including your locally saved license. CSV export is available to everyone.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>` : `<h2>Using the trainer</h2><p>Ear in Context is provided as an educational practice aid, without a promise of a specific musical result. Protect your hearing: keep device volume comfortable. You may use the free core indefinitely.</p><h2>Studio purchase</h2><p>Studio is a $24 one-time purchase for the extra Clarity and Reed synthesis textures and JSON backup. Checkout is hosted by Sociobot/Dodo, the merchant of record. Refunds are handled there; a refunded or revoked license stops unlocking Studio. Core practice, CSV export, privacy, and accessibility are never paywalled.</p><h2>License and availability</h2><p>A Studio license is for your personal use and may be restored on your devices. Do not resell or publish it. We may improve or discontinue the hosted site, but your locally stored practice data remains under your control.</p><h2>Contact</h2><p>Questions can be sent through <a href="https://sociobot.in">sociobot.in</a>. Effective 27 August 2026.</p>`}
-    <a class="button-link" href="/" data-nav="/">Return to practice</a></main>${renderFooter()}`;
+    <a class="button-link" href="/" data-nav="/">Return to practice</a></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
   bindCommon();
+}
+
+function renderNotFound(): void {
+  app.innerHTML = `${renderHeader()}<main id="main" class="policy not-found"><p class="eyebrow">Lost in the progression</p><h1 tabindex="-1">That practice page does not exist</h1><p>Try the practice table or start with the sample cadence.</p><div class="button-row"><a class="button-link primary" href="/" data-nav="/">Go to practice</a><a class="button-link" href="/demo" data-nav="/demo">Try sample practice</a></div></main>${renderFooter()}<div id="live-status" class="sr-only" aria-live="polite"></div>`;
+  bindCommon();
+}
+
+function setRouteMetadata(current: ReturnType<typeof route>): void {
+  const details = current === 'privacy'
+    ? { title: 'Privacy — Ear in Context', description: 'Read how Ear in Context stores practice progress and handles microphone audio.' }
+    : current === 'terms'
+      ? { title: 'Terms — Ear in Context', description: 'Read the terms for Ear in Context ear-training practice.' }
+      : current === 'not-found'
+        ? { title: 'Page not found — Ear in Context', description: 'This Ear in Context practice page does not exist.' }
+        : isDemo
+          ? { title: 'Demo — Ear in Context', description: 'Try a sample harmony practice without changing your saved progress.' }
+          : { title: 'Ear in Context — practise hearing harmony', description: 'Practice hearing harmony in chord patterns with scale-degree, progression, and sung-note exercises.' };
+  document.title = details.title;
+  document.querySelector('meta[name="description"]')?.setAttribute('content', details.description);
+  const canonicalPath = isDemo && current === 'practice' ? '/demo' : location.pathname;
+  document.querySelector('link[rel="canonical"]')?.setAttribute('href', `${location.origin}${canonicalPath}`);
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', details.title);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', details.description);
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', details.title);
+  document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', details.description);
+}
+
+function finishRoute(): void {
+  if (!routeFocusPending) return;
+  routeFocusPending = false;
+  window.setTimeout(() => {
+    const heading = document.querySelector<HTMLElement>('main h1');
+    heading?.focus();
+    announce(document.title);
+  }, 0);
 }
 
 function render(): void {
   const current = route();
-  if (current !== 'practice') { renderPolicy(current); return; }
+  if (current === 'not-found') { renderNotFound(); setRouteMetadata(current); finishRoute(); return; }
+  if (current !== 'practice') { renderPolicy(current); setRouteMetadata(current); finishRoute(); return; }
   app.innerHTML = `${renderHeader()}<main id="main">
+    ${isDemo ? `<aside class="demo-banner" aria-label="Demo status"><strong>Demo — sample data, nothing is saved</strong><span>Try the cadence, choices, and sung-note view.</span><span class="demo-actions"><button data-action="reset-demo">Reset demo</button><button data-action="start-real">Start for real</button></span></aside>` : ''}
     ${!online ? '<div class="offline-banner" role="status">Offline practice is ready. License checks will resume when you reconnect.</div>' : ''}
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy"><p class="eyebrow">Context first. Your pace.</p><h1 id="hero-title">Hear the path,<br><em>not the drill.</em></h1><p class="dek">Real voice leading, cadence-anchored notes, and a keyboard that shows what you sing. Explore freely, then test when you choose.</p><a class="button-link primary" href="#practice">Open today’s practice <span aria-hidden="true">↓</span></a></div>
+    <section class="hero ${isDemo ? 'demo-hero' : ''}" aria-labelledby="hero-title">
+      <div class="hero-copy"><p class="eyebrow">${isDemo ? 'Sample cadence loaded' : 'Ear training for self-taught musicians'}</p><h1 id="hero-title" tabindex="-1">${isDemo ? 'Sample harmony practice' : 'Practice hearing harmony in real songs'}</h1><p class="dek">${isDemo ? 'Press play, choose the next note, or open Sing it back.' : 'For self-taught musicians who want to hear how notes move together.'}</p>${isDemo ? '' : '<div class="hero-actions"><a class="button-link primary" href="/demo" data-nav="/demo">Try sample practice</a><span>Hear a short chord pattern, then choose the next note.</span></div><ul class="plain-facts"><li>No account</li><li>Practice audio stays in your browser</li><li>$24 Studio is optional</li></ul>'}</div>
       <picture><source srcset="/assets/voice-paths.webp" type="image/webp"><img src="/assets/voice-paths.jpg" width="1200" height="800" alt="Paper pitch tokens connected by gently moving teal voice paths" fetchpriority="high" decoding="async"></picture>
     </section>
     <section id="practice" class="practice-shell" aria-labelledby="practice-title">
-      <div class="practice-heading"><div><p class="eyebrow">Practice table</p><h2 id="practice-title">Stay with the sound</h2></div><div class="score" aria-label="Session progress"><strong>${progress.answered}</strong> answered <span>·</span> <strong>${accuracy()}%</strong> right</div></div>
+      <div class="practice-heading"><div><p class="eyebrow">Listen, choose, sing</p><h2 id="practice-title">Today’s ear practice</h2></div><div class="score" aria-label="Session progress"><strong>${progress.answered}</strong> answered <span>·</span> <strong>${accuracy()}%</strong> right</div></div>
       <div class="global-controls" aria-label="Practice controls">
         <label class="switch"><input type="checkbox" data-control="sandbox" ${progress.sandbox ? 'checked' : ''}><span>Sandbox</span><small>${progress.sandbox ? 'Explore—nothing is scored' : 'Test—answers are scheduled'}</small></label>
         <label class="switch"><input type="checkbox" data-control="hold" ${progress.holdLevel ? 'checked' : ''}><span>Hold level</span><small>${progress.holdLevel ? 'Difficulty stays here' : 'Advance when ready'}</small></label>
@@ -262,7 +337,7 @@ function render(): void {
       </div>
       <div id="practice-panel" role="tabpanel" tabindex="0" aria-labelledby="module-tab-${moduleId}"></div>
     </section>
-    <section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">More colours, same honest core.</h2><p>Unlock Clarity and Reed synthesis textures plus a full JSON backup. Core exercises and CSV export stay free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Unlock Studio</a>`}</div></section>
+    ${!isDemo ? `<section class="studio" aria-labelledby="studio-title"><div><p class="eyebrow">Optional Studio</p><h2 id="studio-title">Choose extra sound textures</h2><p>Studio adds Clarity and Reed textures plus a JSON backup. CSV export stays free.</p></div><div class="studio-buy"><strong>$24</strong><span>one-time purchase</span>${studioUnlocked ? '<span class="unlocked">✓ Studio unlocked</span>' : `<a class="button-link dark" href="${checkoutUrl()}">Buy Studio</a>`}</div></section>` : ''}
     <section class="settings" aria-labelledby="settings-title"><details><summary id="settings-title">Progress, sound & license</summary><div class="settings-grid">
       <div><h3>Sound texture</h3><div class="texture-options"><button data-texture="warm" aria-label="Warm texture, free" aria-pressed="${texture() === 'warm'}">Warm <small>Free</small></button><button data-texture="clarity" aria-label="Clarity texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'clarity'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Clarity <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button><button data-texture="reed" aria-label="Reed texture, ${studioUnlocked ? 'Studio' : 'locked'}" aria-pressed="${texture() === 'reed'}" ${studioUnlocked ? '' : 'data-locked="true"'}>Reed <small>${studioUnlocked ? 'Studio' : 'Locked'}</small></button></div></div>
       <div><h3>Your data</h3><p>${Object.keys(progress.reviews).length ? `${Object.keys(progress.reviews).length} items have a local review schedule.` : 'No scored answers yet. Start in Test mode when you are ready.'}</p><div class="button-row"><button aria-label="Export progress as CSV" data-action="export">Export CSV</button>${studioUnlocked ? '<button aria-label="Back up progress as JSON" data-action="backup">Backup JSON</button>' : ''}<button aria-label="Erase local progress" data-action="erase" class="quiet-danger">Erase local progress</button></div></div>
@@ -272,6 +347,8 @@ function render(): void {
   bindCommon();
   bindPracticeShell();
   renderPractice();
+  setRouteMetadata('practice');
+  finishRoute();
 }
 
 function renderPractice(): void {
@@ -378,11 +455,29 @@ function bindCommon(): void {
   document.querySelector<HTMLButtonElement>('[data-action="theme"]')?.addEventListener('click', () => {
     const dark = document.documentElement.dataset.theme !== 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    localStorage.setItem('ear-in-context:theme', dark ? 'dark' : 'light');
+    if (!isDemo) localStorage.setItem('ear-in-context:theme', dark ? 'dark' : 'light');
   });
+  document.querySelector<HTMLButtonElement>('[data-action="reset-demo"]')?.addEventListener('click', () => {
+    progress = resetDemoProgress();
+    moduleId = 'intervals';
+    answer = null;
+    render();
+    announce('Sample practice reset.');
+  });
+  document.querySelector<HTMLButtonElement>('[data-action="start-real"]')?.addEventListener('click', startForReal);
 }
 
-window.addEventListener('popstate', render);
+window.addEventListener('popstate', () => {
+  const nextDemo = location.pathname === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+  if (nextDemo !== isDemo) {
+    isDemo = nextDemo;
+    useDemoStorage(isDemo);
+    progress = loadProgress();
+    if (isDemo && progress.answered === 0 && Object.keys(progress.reviews).length === 0) progress = resetDemoProgress();
+  }
+  routeFocusPending = true;
+  render();
+});
 window.addEventListener('online', () => { online = true; render(); void reconcileLicense(); });
 window.addEventListener('offline', () => { online = false; render(); });
 window.addEventListener('beforeunload', () => { stopMic(); closeAudio(); });
@@ -396,10 +491,11 @@ window.addEventListener('keydown', event => {
   if (number >= 1 && number <= 9) document.querySelectorAll<HTMLButtonElement>('[data-choice]')[number - 1]?.click();
 });
 
-const savedTheme = localStorage.getItem('ear-in-context:theme');
+const savedTheme = isDemo ? null : localStorage.getItem('ear-in-context:theme');
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 
 async function reconcileLicense(): Promise<void> {
+  if (isDemo) return;
   const verdict = await verifyLicense();
   if (!verdict) return;
   if (studioUnlocked !== verdict.valid) {
@@ -410,5 +506,5 @@ async function reconcileLicense(): Promise<void> {
 }
 
 render();
-void reconcileLicense();
+if (!isDemo) void reconcileLicense();
 if ('serviceWorker' in navigator && import.meta.env.PROD) window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js'));
