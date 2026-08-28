@@ -1,4 +1,20 @@
-# Repair handoff — Ear in Context
+# Review 2 handoff — Ear in Context
+
+Completed the requested adversarial first-read review only; no product code was
+modified. Added `.factory/review-2.md` with cold mobile/desktop evidence, the
+requested landing/README copy inventory, demo and clean-clone claim-test results,
+and routing/structure findings.
+
+Verification run from clean clone `/tmp/eic-review-clean.Ol54Ja`: `npm test`,
+`npm run build`, all six commands listed in `.factory/claims.json`,
+`npm run test:browser`, and `npm run audit:a11y` with the documented preview
+server. All passed. Live HTTP probes found `/404` and an unknown path return 200.
+
+Review verdict: **FAIL**. Resolve the false “real songs” headline, deploy genuine
+HTTP-404 fallback behaviour, then address the unlisted claims and copy findings in
+`.factory/review-2.md`.
+
+## Previous repair handoff
 
 ## Release repair
 
