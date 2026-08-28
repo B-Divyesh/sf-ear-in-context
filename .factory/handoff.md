@@ -39,3 +39,20 @@ No product follow-up is required. A standalone Lighthouse CLI score was not
 available because Chrome crashes in this verifier container; installed
 Playwright Chromium completed the browser, axe, PWA, console, and performance
 budget checks.
+
+## Review 1 — 2026-08-28
+
+Performed the requested adversarial first-read review without changing product
+code. The report is `.factory/review-1.md`.
+
+Fresh live checks at 390 px and desktop, a clean-clone `npm ci && npm test &&
+npm run build`, local production-preview checks, Axe, storage-isolation
+checks, and live route/link checks were run. The review result is **FAIL**:
+the required isolated sample-data demo and claims registry/tests are absent;
+the first screen omits its audience and uses unexplained theory terms; and an
+unknown URL displays the practice page rather than a designed 404. The report
+also records metadata, focus-routing, sitemap, copy, and shared-skeleton
+findings.
+
+No product files were modified. This handoff section and the review are the
+only review artifacts added.
